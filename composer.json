@@ -1,0 +1,64 @@
+{
+    "name": "calmarusin/laravel-migration-review",
+    "description": "Catch dangerous Laravel migrations before they hit production: a static rule engine plus an optional Claude-powered review, as an Artisan command built for CI.",
+    "keywords": [
+        "laravel",
+        "migrations",
+        "database",
+        "code-review",
+        "ci",
+        "ai",
+        "claude",
+        "anthropic",
+        "zero-downtime"
+    ],
+    "homepage": "https://github.com/calmarusin/laravel-migration-review",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Cal Marusin",
+            "email": "cal.marusin@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "anthropic-ai/sdk": "^0.54",
+        "illuminate/console": "^12.0|^13.0",
+        "illuminate/database": "^12.0|^13.0",
+        "illuminate/support": "^12.0|^13.0",
+        "nikic/php-parser": "^5.0"
+    },
+    "require-dev": {
+        "guzzlehttp/psr7": "^2.6|^3.0",
+        "laravel/pint": "^1.18",
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpunit/phpunit": "^11.0|^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MigrationReview\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MigrationReview\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "format": "pint"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MigrationReview\\MigrationReviewServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
