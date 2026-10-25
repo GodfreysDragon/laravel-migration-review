@@ -102,6 +102,35 @@ class ReviewCommandTest extends TestCase
         $this->assertNotEmpty($data['migrations'][0]['findings']);
     }
 
+    public function test_previews_built_from_schema_reads_are_marked_approximate(): void
+    {
+        $this->artisan('migrate', ['--path' => self::fixturePath('2026_01_01_000000_create_orders_table.php'), '--realpath' => true])->assertSuccessful();
+        config(['migration-review.ai.api_key' => 'test-key']);
+        $fake = new FakeAiReviewer(new AiReview('', []));
+        $this->app->instance(AiReviewer::class, $fake);
+
+        // On SQLite, ->change() rebuilds the table from the live column list, which is empty in pretend mode.
+        $migration = $this->runJson(['paths' => [self::fixturePath('2026_01_03_000000_restructure_orders_table.php')]])['migrations'][0];
+
+        $this->assertContains('create table "__temp__orders" ()', $migration['sql']);
+        $this->assertStringStartsWith('SQL preview is approximate:', $migration['notes'][0]);
+        $this->assertTrue($fake->inputs[0]->sqlApproximate);
+    }
+
+    public function test_the_ai_gets_row_counts_for_tables_touched_by_query_builder_writes(): void
+    {
+        $this->artisan('migrate', ['--path' => self::fixturePath('2026_01_01_000000_create_orders_table.php'), '--realpath' => true])->assertSuccessful();
+        DB::table('orders')->insert(['reference' => 'R1', 'customer_email' => 'c1@x.test', 'total_cents' => 1]);
+        config(['migration-review.ai.api_key' => 'test-key']);
+        $fake = new FakeAiReviewer(new AiReview('', []));
+        $this->app->instance(AiReviewer::class, $fake);
+
+        // The backfill fixture touches `orders` only through DB::table(), never through Schema::.
+        $this->runJson(['paths' => [self::fixturePath('2026_01_04_000000_backfill_order_totals.php')]]);
+
+        $this->assertSame(['orders' => 1], $fake->inputs[0]->tableRows);
+    }
+
     public function test_ai_findings_are_merged_when_a_reviewer_is_configured(): void
     {
         config(['migration-review.ai.api_key' => 'test-key']);
