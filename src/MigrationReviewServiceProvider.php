@@ -3,12 +3,13 @@
 namespace MigrationReview;
 
 use Anthropic\Client;
-use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use MigrationReview\Ai\AiReviewer;
 use MigrationReview\Ai\CachingReviewer;
 use MigrationReview\Ai\ClaudeReviewer;
 use MigrationReview\Ai\PromptBuilder;
+use MigrationReview\Analysis\Rules\Rule;
 use MigrationReview\Analysis\StaticAnalyzer;
 use MigrationReview\Commands\ReviewMigrationsCommand;
 use MigrationReview\Support\MigrationLocator;
@@ -24,7 +25,7 @@ class MigrationReviewServiceProvider extends ServiceProvider
 
         $this->app->singleton(StaticAnalyzer::class, fn (Application $app) => new StaticAnalyzer(
             new MigrationParser,
-            array_map(fn (string $rule) => $app->make($rule), $app['config']->get('migration-review.rules', [])),
+            array_values(array_map(fn (string $rule): Rule => $app->make($rule), $app['config']->get('migration-review.rules', []))),
             $app['config']->get('migration-review.disabled_rules', []),
         ));
 

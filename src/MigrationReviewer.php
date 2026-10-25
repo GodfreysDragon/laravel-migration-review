@@ -95,7 +95,7 @@ class MigrationReviewer
             }
         }
 
-        if ($withAi) {
+        if ($withAi && $this->aiReviewer !== null) {
             $tables = array_filter(array_map(fn ($op) => $op->table, $migration->operations));
 
             try {

@@ -10,7 +10,7 @@ It has two layers:
 1. **A static rule engine.** No API key and no database writes. Migrations are parsed into an AST and never executed for analysis.
 2. **An optional Claude review.** It sees the source, the SQL preview, the driver, real table sizes and the rule findings, and reports only what the rules missed.
 
-**Stack:** PHP 8.2+ · Laravel 12/13 · nikic/php-parser 5 · Anthropic PHP SDK (Claude Opus 5.5, structured outputs, server-side fallbacks) · PHPUnit 12 + Orchestra Testbench · Pint · GitHub Actions
+**Stack:** PHP 8.2+ · Laravel 12/13 · nikic/php-parser 5 · Anthropic PHP SDK (Claude Opus 5.5, structured outputs, server-side fallbacks) · PHPUnit 12 + Orchestra Testbench · PHPStan/Larastan · Pint · GitHub Actions
 
 ## What was built
 
@@ -40,18 +40,20 @@ It has two layers:
 
 | Area | Status |
 | --- | --- |
-| Unit and feature tests | ✅ 54 tests, 151 assertions, all passing |
+| Unit and feature tests | ✅ 59 tests, all passing on SQLite |
+| MySQL and PostgreSQL | ✅ Driver tests (row-count queries, driver-specific findings, SQL preview, batch-created tables) pass against MySQL 8.4 and PostgreSQL 16; CI runs them in service containers |
+| Static analysis | ✅ PHPStan level 8 (Larastan), no errors |
 | Laravel 12 compatibility | ✅ Full suite passes against Laravel 12.69 / Testbench 10 (scratch install) |
 | Laravel 11 | ❌ Dropped: every 11.x release is blocked by Packagist security advisories, so Composer won't install it by default |
 | Claude request/response handling | ✅ Tested through the real SDK with a stubbed HTTP transport: request body, beta header, fallbacks, schema, refusal, invalid JSON, 401 |
 | Live Claude call | ⚠️ Not run: no `ANTHROPIC_API_KEY` on this machine |
 | Real-world run | ✅ Ran read-only against `saas-boilerplate` and `rag-doc-qa` migrations: 16 migrations, 1 genuine finding (FK added to existing `users`). The raw-sql rule was retuned after it over-flagged pgvector setup on a newly created table |
 | Code style | ✅ Pint (Laravel preset) passes |
-| CI workflow | ✅ Green on GitHub Actions (PHP 8.2–8.4 × Laravel 12/13 + Pint) |
+| CI workflow | ✅ Green on GitHub Actions for PHP 8.2–8.4 × Laravel 12/13 + Pint. The MySQL/PostgreSQL and PHPStan jobs were added later and first run when this branch is opened as a PR |
 | Published | ✅ On GitHub as `GodfreysDragon/laravel-migration-review`. Deliberately not on Packagist; installs via a Composer `vcs` repository |
 
 ## Remaining work
 
 1. Tag `v0.1.0` (and create a GitHub release) so installs can use `^0.1` instead of `dev-main`.
 2. Add `ANTHROPIC_API_KEY` locally and run `php artisan migrate:review --all` on a real app to capture genuine AI output for the README.
-3. Add MySQL and PostgreSQL service containers to CI so the row-count queries for those drivers are exercised.
+3. Optionally, a small demo repo with a PR that trips the rules, for a screenshot of the inline annotations.

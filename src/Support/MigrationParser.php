@@ -74,19 +74,23 @@ class MigrationParser
      */
     private function schemaOperations(array $statements): array
     {
-        $calls = $this->finder->find($statements, fn (Node $node) => $this->isSchemaCall($node));
+        $operations = [];
 
-        $operations = array_map(function (StaticCall|MethodCall $call) {
+        foreach ($this->finder->find($statements, fn (Node $node) => $this->isSchemaCall($node)) as $call) {
+            if (! $call instanceof StaticCall && ! $call instanceof MethodCall) {
+                continue;
+            }
+
             $args = array_map(fn (Node\Arg $arg) => $this->literal($arg->value), array_values(array_filter($call->args, fn ($a) => $a instanceof Node\Arg)));
 
-            return new SchemaOperation(
+            $operations[] = new SchemaOperation(
                 method: $call->name instanceof Node\Identifier ? $call->name->toString() : '?',
                 table: is_string($args[0] ?? null) ? $args[0] : null,
                 args: $args,
                 line: $call->getStartLine(),
                 blueprintCalls: $this->blueprintCalls($call),
             );
-        }, $calls);
+        }
 
         usort($operations, fn (SchemaOperation $a, SchemaOperation $b) => $a->line <=> $b->line);
 
@@ -128,7 +132,7 @@ class MigrationParser
         $blueprintVar = $callback->params[0]->var->name;
         $body = $callback instanceof Expr\ArrowFunction ? [$callback->expr] : $callback->stmts;
 
-        $chains = $this->finder->find($body, fn (Node $node) => $node instanceof MethodCall && $this->rootVariable($node) === $blueprintVar);
+        $chains = array_filter($this->finder->findInstanceOf($body, MethodCall::class), fn (MethodCall $node) => $this->rootVariable($node) === $blueprintVar);
 
         // Keep only the outermost call of each fluent chain.
         $inner = [];
@@ -161,7 +165,7 @@ class MigrationParser
         while ($node instanceof MethodCall) {
             array_unshift($links, [
                 'method' => $node->name instanceof Node\Identifier ? $node->name->toString() : '?',
-                'args' => array_map(fn ($arg) => $arg instanceof Node\Arg ? $this->literal($arg->value) : null, $node->args),
+                'args' => array_values(array_map(fn ($arg) => $arg instanceof Node\Arg ? $this->literal($arg->value) : null, $node->args)),
             ]);
             $node = $node->var;
         }
@@ -186,7 +190,11 @@ class MigrationParser
     {
         $calls = [];
 
-        foreach ($this->finder->find($statements, fn (Node $n) => $n instanceof StaticCall || $n instanceof MethodCall) as $node) {
+        foreach ($this->finder->findInstanceOf($statements, Expr\CallLike::class) as $node) {
+            if (! $node instanceof StaticCall && ! $node instanceof MethodCall) {
+                continue;
+            }
+
             $method = $node->name instanceof Node\Identifier ? $node->name->toString() : null;
 
             if ($method === null) {
@@ -254,7 +262,7 @@ class MigrationParser
                 'false' => false,
                 default => null,
             },
-            $expr instanceof Expr\Array_ => array_map(fn ($item) => $item === null ? null : $this->literal($item->value), $expr->items),
+            $expr instanceof Expr\Array_ => array_map(fn (Node\ArrayItem $item) => $this->literal($item->value), $expr->items),
             default => null,
         };
     }

@@ -255,6 +255,13 @@ return [
 composer install
 composer test      # PHPUnit; no network calls (the Anthropic SDK runs against a stubbed transport)
 composer format    # Laravel Pint
+composer analyse   # PHPStan (Larastan)
+```
+
+The default suite uses in-memory SQLite. To also run the driver tests against a real MySQL or PostgreSQL server (CI runs both), set the connection in the environment:
+
+```bash
+TEST_DB_DRIVER=pgsql DB_PORT=5432 DB_USERNAME=postgres DB_PASSWORD=secret vendor/bin/phpunit --filter DatabaseDriversTest
 ```
 
 Contributions are welcome, especially new rules with tests. Each rule lives in `src/Analysis/Rules` and is tested in `tests/Unit/RulesTest.php`.

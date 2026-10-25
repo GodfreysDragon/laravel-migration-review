@@ -2,6 +2,8 @@
 
 namespace MigrationReview\Ai;
 
+use Anthropic\Beta\Messages\BetaOutputConfig\Effort;
+use Anthropic\Beta\Messages\BetaTextBlock;
 use Anthropic\Client;
 use Anthropic\Core\Exceptions\AnthropicException;
 use Anthropic\Core\Exceptions\AuthenticationException;
@@ -28,6 +30,9 @@ class ClaudeReviewer implements AiReviewer
 
     public function review(ReviewInput $input): AiReview
     {
+        $effort = Effort::tryFrom($this->effort)
+            ?? throw new AiReviewFailed("Invalid AI effort '{$this->effort}'. Use low, medium, high, xhigh or max (MIGRATION_REVIEW_EFFORT).");
+
         try {
             $message = $this->client->beta->messages->create(
                 maxTokens: $this->maxTokens,
@@ -35,7 +40,7 @@ class ClaudeReviewer implements AiReviewer
                 model: $this->model,
                 system: $this->prompts->system(),
                 outputConfig: [
-                    'effort' => $this->effort,
+                    'effort' => $effort,
                     'format' => ['type' => 'json_schema', 'schema' => $this->prompts->schema()],
                 ],
                 fallbacks: 'default',
@@ -59,7 +64,7 @@ class ClaudeReviewer implements AiReviewer
 
         $text = '';
         foreach ($message->content as $block) {
-            if ($block->type === 'text') {
+            if ($block instanceof BetaTextBlock) {
                 $text .= $block->text;
             }
         }

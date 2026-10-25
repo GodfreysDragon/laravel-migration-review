@@ -3,6 +3,7 @@
 namespace MigrationReview\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Database\DatabaseManager;
 use MigrationReview\Analysis\MigrationReport;
 use MigrationReview\Analysis\Severity;
 use MigrationReview\MigrationReviewer;
@@ -32,7 +33,7 @@ class ReviewMigrationsCommand extends Command
 
     protected $description = 'Review migrations for production risks (data loss, locks, unsafe deploys) before running them';
 
-    public function handle(MigrationLocator $locator, MigrationReviewer $reviewer): int
+    public function handle(MigrationLocator $locator, MigrationReviewer $reviewer, DatabaseManager $db): int
     {
         $renderer = $this->renderer();
         $failOn = strtolower((string) ($this->option('fail-on') ?? config('migration-review.fail_on', 'none')));
@@ -51,7 +52,8 @@ class ReviewMigrationsCommand extends Command
             return self::SUCCESS;
         }
 
-        $connection = $this->laravel['db']->connection($this->option('database'));
+        $database = $this->option('database');
+        $connection = $db->connection(is_string($database) ? $database : null);
         $isText = $this->option('format') === 'text';
         $withAi = ! $this->option('no-ai');
 
@@ -73,7 +75,7 @@ class ReviewMigrationsCommand extends Command
         $rendered = $renderer->render($reports);
         $this->output->write($rendered, false, $isText ? OutputInterface::OUTPUT_NORMAL : OutputInterface::OUTPUT_RAW);
 
-        if ($path = $this->option('output')) {
+        if (is_string($path = $this->option('output')) && $path !== '') {
             file_put_contents($path, $isText ? (new OutputFormatter(false))->format($rendered) : $rendered);
         }
 
@@ -96,7 +98,7 @@ class ReviewMigrationsCommand extends Command
      */
     private function files(MigrationLocator $locator): array
     {
-        $paths = $this->argument('paths');
+        $paths = array_values(array_map(strval(...), (array) $this->argument('paths')));
 
         if ($paths !== []) {
             return $locator->explicit($paths);
