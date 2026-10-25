@@ -50,7 +50,7 @@ The package is not on Packagist. Install it from GitHub by adding the repository
 ```
 
 ```bash
-composer require --dev godfreysdragon/laravel-migration-review:dev-main
+composer require --dev godfreysdragon/laravel-migration-review:^0.1
 ```
 
 Requires PHP 8.2+ and Laravel 12 or 13. The service provider is auto-discovered.

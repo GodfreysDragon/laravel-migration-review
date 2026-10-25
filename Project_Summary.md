@@ -1,6 +1,6 @@
 # Project Summary: Laravel Migration Review
 
-_Last updated: 2026-10-25_
+_Last updated: 2026-10-25 (v0.1.0)_
 
 ## What it is
 
@@ -54,6 +54,5 @@ It has two layers:
 
 ## Remaining work
 
-1. Tag `v0.1.0` (and create a GitHub release) so installs can use `^0.1` instead of `dev-main`.
-2. Add `ANTHROPIC_API_KEY` locally and run `php artisan migrate:review --all` on a real app to capture genuine AI output for the README.
-3. Optionally, a small demo repo with a PR that trips the rules, for a screenshot of the inline annotations.
+1. Add `ANTHROPIC_API_KEY` locally and run `php artisan migrate:review --all` on a real app to capture genuine AI output for the README.
+2. Optionally, a small demo repo with a PR that trips the rules, for a screenshot of the inline annotations.
