@@ -6,5 +6,6 @@
 /.gitignore         export-ignore
 /phpunit.xml        export-ignore
 /pint.json          export-ignore
+/phpstan.neon.dist  export-ignore
 /CHANGELOG.md       export-ignore
 /Project_Summary.md export-ignore

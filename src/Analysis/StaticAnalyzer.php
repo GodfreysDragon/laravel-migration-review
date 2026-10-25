@@ -12,6 +12,7 @@ use MigrationReview\Support\Parsed\ParsedMigration;
  *
  * A finding is suppressed by a comment on its line or the line above:
  *   // migration-review-ignore: drop-column, rename
+ *   // migration-review-ignore: drop-table -- archived in Q3   (text after the ids is a free-form reason)
  *   // migration-review-ignore            (ignores every rule on that line)
  */
 class StaticAnalyzer
@@ -64,13 +65,13 @@ class StaticAnalyzer
         foreach ([$finding->line - 1, $finding->line - 2] as $index) {
             $line = $lines[$index] ?? '';
 
-            if (preg_match('/migration-review-ignore(?::\s*([\w,\s-]+))?/', $line, $match) !== 1) {
+            if (preg_match('/migration-review-ignore(?::\s*([a-z0-9][\w-]*(?:\s*,\s*[a-z0-9][\w-]*)*))?/i', $line, $match) !== 1) {
                 continue;
             }
 
-            $ids = isset($match[1]) ? array_map('trim', explode(',', $match[1])) : [];
+            $ids = isset($match[1]) ? array_map(fn ($id) => strtolower(trim($id)), explode(',', $match[1])) : [];
 
-            if ($ids === [] || $ids === [''] || in_array($finding->rule, $ids, true)) {
+            if ($ids === [] || in_array($finding->rule, $ids, true)) {
                 return true;
             }
         }

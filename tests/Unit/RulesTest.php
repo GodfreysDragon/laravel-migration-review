@@ -128,6 +128,8 @@ class RulesTest extends BaseTestCase
             'raw sql on existing table' => ["DB::statement('ALTER TABLE users ADD COLUMN x int');", ['raw-sql']],
             'blanket ignore' => ["// migration-review-ignore\n        Schema::drop('u');", []],
             'ignore other rule only' => ["// migration-review-ignore: rename\n        Schema::drop('u');", ['drop-table']],
+            'ignore with a reason' => ["// migration-review-ignore: drop-table -- archived in Q3\n        Schema::drop('u');", []],
+            'ignore several rules' => ["// migration-review-ignore: rename, drop-table\n        Schema::drop('u');", []],
         ];
     }
 
@@ -165,5 +167,16 @@ class RulesTest extends BaseTestCase
 
         $this->assertSame(['missing-down'], array_map(fn (Finding $f) => $f->rule, $findings));
         $this->assertSame('No down() method', $findings[0]->title);
+    }
+
+    public function test_tables_created_earlier_in_the_same_run_are_treated_as_new(): void
+    {
+        $context = new RuleContext('pgsql', newTables: ['orders']);
+
+        $this->assertSame([], $this->analyze(TestCase::fixture('2026_01_02_000000_add_status_to_orders_table.php'), $context));
+        $this->assertSame(['low'], array_map(
+            fn (Finding $f) => $f->severity->value,
+            $this->analyze(TestCase::migration("DB::statement('CREATE INDEX idx ON orders (email)');"), $context),
+        ));
     }
 }

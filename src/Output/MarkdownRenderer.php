@@ -35,22 +35,20 @@ class MarkdownRenderer implements Renderer
 
             if ($findings === []) {
                 $out[] = 'No issues found.';
-                $out[] = '';
+            } else {
+                $out[] = '| Severity | Line | Issue |';
+                $out[] = '| --- | --- | --- |';
 
-                continue;
-            }
-
-            $out[] = '| Severity | Line | Issue |';
-            $out[] = '| --- | --- | --- |';
-
-            foreach ($findings as $finding) {
-                $out[] = sprintf('| %s | %s | %s |', strtoupper($finding->severity->value), $finding->line ?? '', $this->cell($finding));
+                foreach ($findings as $finding) {
+                    $out[] = sprintf('| %s | %s | %s |', strtoupper($finding->severity->value), $finding->line ?? '', $this->cell($finding));
+                }
             }
 
             $out[] = '';
 
             foreach ($report->notes as $note) {
                 $out[] = "_Note: {$note}_";
+                $out[] = '';
             }
         }
 

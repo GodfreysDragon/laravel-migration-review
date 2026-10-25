@@ -41,7 +41,59 @@ jobs:
       - name: Run tests
         run: vendor/bin/phpunit
 
+  databases:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - driver: pgsql
+            port: 5432
+            username: postgres
+          - driver: mysql
+            port: 3306
+            username: root
+
+    name: Real database (${{ matrix.driver }})
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: testing
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: secret
+          MYSQL_DATABASE: testing
+        ports: ['3306:3306']
+        options: --health-cmd "mysqladmin ping -psecret" --health-interval 5s --health-timeout 5s --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_mysql, pdo_pgsql
+          coverage: none
+
+      - run: composer install --prefer-dist --no-interaction
+
+      - name: Run driver tests
+        env:
+          TEST_DB_DRIVER: ${{ matrix.driver }}
+          DB_HOST: 127.0.0.1
+          DB_PORT: ${{ matrix.port }}
+          DB_USERNAME: ${{ matrix.username }}
+          DB_PASSWORD: secret
+        run: vendor/bin/phpunit --filter DatabaseDriversTest --fail-on-skipped
+
   style:
+    name: Style and static analysis
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,3 +103,4 @@ jobs:
           coverage: none
       - run: composer install --prefer-dist --no-interaction
       - run: vendor/bin/pint --test
+      - run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G

@@ -52,6 +52,17 @@ class ReviewCommandTest extends TestCase
         ], array_column($data['migrations'], 'migration'));
     }
 
+    public function test_tables_created_by_an_earlier_pending_migration_are_not_flagged(): void
+    {
+        $this->app['migrator']->path(self::fixturePath());
+
+        $migrations = array_column($this->runJson()['migrations'], 'findings', 'migration');
+
+        $this->assertSame([], $migrations['2026_01_02_000000_add_status_to_orders_table']);
+        // legacy_invoices is not created in this run; ->change() still drops unrestated modifiers on an empty table.
+        $this->assertSame(['drop-table', 'column-change'], array_column($migrations['2026_01_03_000000_restructure_orders_table'], 'rule'));
+    }
+
     public function test_all_option_includes_migrations_that_already_ran(): void
     {
         $this->app['migrator']->path(self::fixturePath());

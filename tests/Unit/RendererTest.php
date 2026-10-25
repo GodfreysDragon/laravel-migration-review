@@ -71,4 +71,12 @@ class RendererTest extends BaseTestCase
         $this->assertStringContainsString('note: SQL preview unavailable: boom', $text);
         $this->assertStringContainsString('Reviewed 1 migration: 1 high, 1 medium, 1 low.', $text);
     }
+
+    public function test_markdown_keeps_notes_when_there_are_no_findings(): void
+    {
+        $report = new MigrationReport(TestCase::migration("Schema::create('x', fn (\$t) => \$t->id());"), notes: ['AI review failed: boom']);
+        $markdown = (new MarkdownRenderer)->render([$report]);
+
+        $this->assertStringContainsString("No issues found.\n\n_Note: AI review failed: boom_", $markdown);
+    }
 }

@@ -23,7 +23,7 @@ class ClaudeReviewerTest extends BaseTestCase
 {
     private ?RequestInterface $sent = null;
 
-    private function reviewer(int $status, array $body): ClaudeReviewer
+    private function reviewer(int $status, array $body, string $effort = 'medium'): ClaudeReviewer
     {
         $transport = new class($status, $body, $this) implements ClientInterface
         {
@@ -39,7 +39,7 @@ class ClaudeReviewerTest extends BaseTestCase
 
         $client = new Client(apiKey: 'sk-test', requestOptions: ['transporter' => $transport, 'maxRetries' => 0]);
 
-        return new ClaudeReviewer($client, new PromptBuilder, 'claude-opus-5-5', 'medium', 16000);
+        return new ClaudeReviewer($client, new PromptBuilder, 'claude-opus-5-5', $effort, 16000);
     }
 
     public function capture(RequestInterface $request): void
@@ -123,5 +123,19 @@ class ClaudeReviewerTest extends BaseTestCase
         $this->expectExceptionMessage('ANTHROPIC_API_KEY');
 
         $this->reviewer(401, ['type' => 'error', 'error' => ['type' => 'authentication_error', 'message' => 'invalid x-api-key']])->review($this->input());
+    }
+
+    public function test_an_invalid_effort_fails_before_calling_the_api(): void
+    {
+        $reviewer = $this->reviewer(200, $this->message('{}'), effort: 'extreme');
+
+        try {
+            $reviewer->review($this->input());
+            $this->fail('Expected AiReviewFailed.');
+        } catch (AiReviewFailed $e) {
+            $this->assertStringContainsString("Invalid AI effort 'extreme'", $e->getMessage());
+        }
+
+        $this->assertNull($this->sent);
     }
 }

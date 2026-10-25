@@ -2,7 +2,6 @@
 
 namespace MigrationReview\Support;
 
-use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -27,12 +26,10 @@ class SqlPreviewer
         $migration = $this->resolve($file);
         $connection = $this->db->connection(method_exists($migration, 'getConnection') ? $migration->getConnection() : null);
 
-        /** @var ConnectionResolverInterface $resolver */
-        $resolver = $this->db;
-        $previous = $resolver->getDefaultConnection();
+        $previous = $this->db->getDefaultConnection();
 
         try {
-            $resolver->setDefaultConnection($connection->getName());
+            $this->db->setDefaultConnection($connection->getName() ?? $previous);
 
             $queries = $connection->pretend(function () use ($migration) {
                 if (method_exists($migration, 'up')) {
@@ -40,13 +37,13 @@ class SqlPreviewer
                 }
             });
         } finally {
-            $resolver->setDefaultConnection($previous);
+            $this->db->setDefaultConnection($previous);
         }
 
         // Drop read-only statements: they are schema introspection (e.g. for ->change()) or lookups, not changes.
         $writes = array_filter($queries, fn (array $query) => preg_match('/^\s*(select|pragma|show|describe)\b/i', $query['query']) !== 1);
 
-        return array_values(array_map(fn (array $query) => $this->inline($query['query'], $query['bindings'] ?? []), $writes));
+        return array_values(array_map(fn (array $query) => $this->inline($query['query'], $query['bindings']), $writes));
     }
 
     private function resolve(MigrationFile $file): object

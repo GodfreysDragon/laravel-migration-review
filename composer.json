@@ -1,5 +1,5 @@
 {
-    "name": "calmarusin/laravel-migration-review",
+    "name": "godfreysdragon/laravel-migration-review",
     "description": "Catch dangerous Laravel migrations before they hit production: a static rule engine plus an optional Claude-powered review, as an Artisan command built for CI.",
     "keywords": [
         "laravel",
@@ -12,7 +12,7 @@
         "anthropic",
         "zero-downtime"
     ],
-    "homepage": "https://github.com/calmarusin/laravel-migration-review",
+    "homepage": "https://github.com/GodfreysDragon/laravel-migration-review",
     "license": "MIT",
     "type": "library",
     "authors": [
@@ -31,6 +31,7 @@
     },
     "require-dev": {
         "guzzlehttp/psr7": "^2.6|^3.0",
+        "larastan/larastan": "^3.13",
         "laravel/pint": "^1.18",
         "orchestra/testbench": "^10.0|^11.0",
         "phpunit/phpunit": "^11.0|^12.0"
@@ -47,7 +48,8 @@
     },
     "scripts": {
         "test": "phpunit",
-        "format": "pint"
+        "format": "pint",
+        "analyse": "phpstan analyse --memory-limit=1G"
     },
     "extra": {
         "laravel": {

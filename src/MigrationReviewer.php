@@ -50,13 +50,21 @@ class MigrationReviewer
         $context = new RuleContext($connection->getDriverName(), $tableRows, $this->largeTableRows);
 
         $reports = [];
+        $newTables = [];
 
         foreach ($parsed as $migration) {
             if ($progress !== null) {
                 $progress($migration->file);
             }
 
-            $reports[] = $this->reviewOne($migration, $context, $withSql, $withAi && $this->aiReviewer !== null);
+            $reports[] = $this->reviewOne($migration, $context->withNewTables(array_keys($newTables)), $withSql, $withAi && $this->aiReviewer !== null);
+
+            // Later migrations in this run will find these tables empty, unless the create already ran.
+            foreach ($migration->createdTables() as $table) {
+                if (! $this->tableExists($connection, $table)) {
+                    $newTables[$table] = true;
+                }
+            }
         }
 
         return $reports;
@@ -87,7 +95,7 @@ class MigrationReviewer
             }
         }
 
-        if ($withAi) {
+        if ($withAi && $this->aiReviewer !== null) {
             $tables = array_filter(array_map(fn ($op) => $op->table, $migration->operations));
 
             try {
@@ -107,6 +115,16 @@ class MigrationReviewer
         }
 
         return $report;
+    }
+
+    private function tableExists(Connection $connection, string $table): bool
+    {
+        try {
+            return $connection->getSchemaBuilder()->hasTable($table);
+        } catch (Throwable) {
+            // No reachable database: the create in this run has not happened yet.
+            return false;
+        }
     }
 
     /**

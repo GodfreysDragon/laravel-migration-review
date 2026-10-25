@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- Driver tests against real MySQL and PostgreSQL servers, run in CI.
+- PHPStan (Larastan) at level 8 in CI (`composer analyse`).
+
+### Changed
+- Package renamed to `godfreysdragon/laravel-migration-review`.
+- An invalid `MIGRATION_REVIEW_EFFORT` is reported clearly instead of being sent to the API.
+
+### Fixed
+- Tables created by an earlier migration in the same run are treated as new, so follow-up migrations on them are no longer flagged as risky on a fresh database.
+- `// migration-review-ignore: <rule-id>` comments can now be followed by a free-form reason.
+- The Markdown report keeps notes (for example a failed AI review) for migrations with no findings.
+
 ## [0.1.0] - 2026-10-04
 
 ### Added
