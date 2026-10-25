@@ -1,5 +1,5 @@
 {
-    "name": "calmarusin/laravel-migration-review",
+    "name": "godfreysdragon/laravel-migration-review",
     "description": "Catch dangerous Laravel migrations before they hit production: a static rule engine plus an optional Claude-powered review, as an Artisan command built for CI.",
     "keywords": [
         "laravel",
@@ -12,7 +12,7 @@
         "anthropic",
         "zero-downtime"
     ],
-    "homepage": "https://github.com/calmarusin/laravel-migration-review",
+    "homepage": "https://github.com/GodfreysDragon/laravel-migration-review",
     "license": "MIT",
     "type": "library",
     "authors": [

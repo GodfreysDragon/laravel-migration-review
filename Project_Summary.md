@@ -1,6 +1,6 @@
 # Project Summary: Laravel Migration Review
 
-_Last updated: 2026-10-04_
+_Last updated: 2026-10-25_
 
 ## What it is
 
@@ -21,7 +21,7 @@ It has two layers:
   - Row counts come from database statistics (MySQL `information_schema`, PostgreSQL `pg_class.reltuples`, SQL Server `sys.partitions`, SQLite `COUNT(*)`). Lock-sensitive findings move up one level on large tables.
   - Advice is driver-specific: `CREATE INDEX CONCURRENTLY` on PostgreSQL, `ALGORITHM=INPLACE` or gh-ost on MySQL.
   - Rules know about Laravel quirks, for example `->change()` dropping modifiers you don't restate since Laravel 11.
-- **No false positives on new tables:** anything done to a table created in the same migration is ignored.
+- **No false positives on new tables:** anything done to a table created in the same migration, or by an earlier migration in the same run that has not been applied yet, is ignored.
 - **SQL preview** through Laravel's `pretend` mode, with schema-introspection reads filtered out.
 - **Suppression:** `// migration-review-ignore[: rule-id]` comments, `disabled_rules`, and custom rules via config.
 
@@ -40,20 +40,18 @@ It has two layers:
 
 | Area | Status |
 | --- | --- |
-| Unit and feature tests | ✅ 49 tests, 143 assertions, all passing (Laravel 13 / PHP 8.4) |
+| Unit and feature tests | ✅ 54 tests, 151 assertions, all passing |
 | Laravel 12 compatibility | ✅ Full suite passes against Laravel 12.69 / Testbench 10 (scratch install) |
 | Laravel 11 | ❌ Dropped: every 11.x release is blocked by Packagist security advisories, so Composer won't install it by default |
 | Claude request/response handling | ✅ Tested through the real SDK with a stubbed HTTP transport: request body, beta header, fallbacks, schema, refusal, invalid JSON, 401 |
 | Live Claude call | ⚠️ Not run: no `ANTHROPIC_API_KEY` on this machine |
 | Real-world run | ✅ Ran read-only against `saas-boilerplate` and `rag-doc-qa` migrations: 16 migrations, 1 genuine finding (FK added to existing `users`). The raw-sql rule was retuned after it over-flagged pgvector setup on a newly created table |
 | Code style | ✅ Pint (Laravel preset) passes |
-| CI workflow | ⚠️ Written (PHP 8.2–8.4 × Laravel 12/13 + Pint) but not yet run on GitHub |
-| Published | ❌ Not yet: needs a GitHub repo and a Packagist submission |
+| CI workflow | ✅ Green on GitHub Actions (PHP 8.2–8.4 × Laravel 12/13 + Pint) |
+| Published | ✅ On GitHub as `GodfreysDragon/laravel-migration-review`. Deliberately not on Packagist; installs via a Composer `vcs` repository |
 
-## To publish
+## Remaining work
 
-1. Pick the GitHub username/vendor. The package uses `calmarusin` as a placeholder in `composer.json`, `README.md` badges and links.
-2. `git add -A && git commit -m "Initial release"`, create the GitHub repo, push to `main`.
-3. Tag `v0.1.0` and push the tag.
-4. Submit the repo URL at https://packagist.org/packages/submit and enable the GitHub webhook for auto-updates.
-5. Add `ANTHROPIC_API_KEY` locally and run `php artisan migrate:review --all` on a real app to capture genuine AI output for the README.
+1. Tag `v0.1.0` (and create a GitHub release) so installs can use `^0.1` instead of `dev-main`.
+2. Add `ANTHROPIC_API_KEY` locally and run `php artisan migrate:review --all` on a real app to capture genuine AI output for the README.
+3. Add MySQL and PostgreSQL service containers to CI so the row-count queries for those drivers are exercised.

@@ -25,7 +25,7 @@ class IndexOnExistingTableRule extends BaseRule
         $findings = [];
 
         foreach ($migration->operations as $operation) {
-            if (! $operation->altersExistingTable() || $migration->createsTable($operation->table)) {
+            if (! $operation->altersExistingTable() || $this->isNewTable($migration, $operation->table, $context)) {
                 continue;
             }
 

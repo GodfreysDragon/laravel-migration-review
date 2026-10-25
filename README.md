@@ -1,41 +1,32 @@
 # Laravel Migration Review
 
-[![Tests](https://github.com/calmarusin/laravel-migration-review/actions/workflows/tests.yml/badge.svg)](https://github.com/calmarusin/laravel-migration-review/actions/workflows/tests.yml)
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/calmarusin/laravel-migration-review.svg)](https://packagist.org/packages/calmarusin/laravel-migration-review)
-[![License](https://img.shields.io/packagist/l/calmarusin/laravel-migration-review.svg)](LICENSE.md)
+[![Tests](https://github.com/GodfreysDragon/laravel-migration-review/actions/workflows/tests.yml/badge.svg)](https://github.com/GodfreysDragon/laravel-migration-review/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 **Catch dangerous migrations before they reach production.**
 
 `php artisan migrate:review` checks your pending migrations for the changes that cause outages and data loss: dropped columns, NOT NULL columns that fail on existing rows, index builds that lock big tables, renames that break the release still running mid-deploy, backfills hiding in `up()`. It runs as a fast static rule engine with no database writes and no API key. Add an Anthropic key and Claude reviews each migration too, with the SQL, your table sizes and the rule findings as context.
 
-Example output against a PostgreSQL database where `orders` has 4.2M rows, with AI review enabled:
+Real output for one of the test fixtures, run against a SQLite database where `orders` already has 1,500 rows:
 
 ```text
-$ php artisan migrate:review
+$ php artisan migrate:review database/migrations/2026_01_02_000000_add_status_to_orders_table.php --no-ai
 
   HIGH  2026_01_02_000000_add_status_to_orders_table
       database/migrations/2026_01_02_000000_add_status_to_orders_table.php
-      AI: Safe on an empty table, but on the 4.2M-row orders table the NOT NULL column fails
-          and the index build blocks writes for minutes.
 
        HIGH  :12 Adds NOT NULL column `status` to `orders` without a default [not-null-without-default]
-        The migration fails as soon as the table has any rows, because existing rows would have
-        NULL in a NOT NULL column. `orders` currently has about 4.2M rows.
-        → Add it as ->nullable() (or with ->default(...)), backfill existing rows, then make it
-          NOT NULL in a follow-up migration.
+        The migration fails as soon as the table has any rows, because existing rows would have NULL in a NOT NULL column. `orders` currently has about 1.5K rows.
+        → Add it as ->nullable() (or with ->default(...)), backfill existing rows, then make it NOT NULL in a follow-up migration.
 
-       HIGH  :15 Builds index on `orders` (customer_email) [index-on-existing-table]
-        Building an index reads the whole table and blocks writes while it runs on most setups.
-        `orders` currently has about 4.2M rows.
-        → On PostgreSQL use DB::statement('CREATE INDEX CONCURRENTLY ...') in a migration with
-          `public $withinTransaction = false;`.
+       MED   :15 Builds index on `orders` (customer_email) [index-on-existing-table]
+        Building an index reads the whole table and blocks writes while it runs on most setups. `orders` currently has about 1.5K rows.
+        → Run this off-peak and check how long it takes against a production-sized copy first.
 
-       MED   :13 Default 'USD' silently mislabels historical orders [ai]
-        Every existing order is backfilled as USD, including ones paid in other currencies.
-        → Backfill currency from the payments table before relying on the column.
-
- Reviewed 1 migration: 2 high, 1 medium, 0 low.
+ Reviewed 1 migration: 1 high, 1 medium, 0 low.
 ```
+
+On PostgreSQL or MySQL the index advice is engine-specific (`CREATE INDEX CONCURRENTLY`, `ALGORITHM=INPLACE`). Above `large_table_rows` (1M by default) the index finding moves up to high. With an Anthropic API key set, Claude adds a one-line `AI:` summary under the file name, plus its own findings tagged `[ai]`.
 
 ## Why
 
@@ -50,8 +41,16 @@ This package checks for all of these on every pull request.
 
 ## Installation
 
+The package is not on Packagist. Install it from GitHub by adding the repository to your app's `composer.json`:
+
+```json
+"repositories": [
+    { "type": "vcs", "url": "https://github.com/GodfreysDragon/laravel-migration-review" }
+]
+```
+
 ```bash
-composer require --dev calmarusin/laravel-migration-review
+composer require --dev godfreysdragon/laravel-migration-review:dev-main
 ```
 
 Requires PHP 8.2+ and Laravel 12 or 13. The service provider is auto-discovered.
@@ -110,10 +109,10 @@ php artisan migrate:review --format=markdown --output=review.md
 | `column-change` | `->change()`: table rewrites, truncation, and modifiers dropped since Laravel 11 | medium |
 | `index-on-existing-table` | Indexes, uniques and foreign keys added to existing tables, with driver-specific online alternatives | medium |
 | `data-manipulation` | `DB::table()->update()/delete()/truncate()` backfills and Eloquent models used inside migrations | medium (truncate: high) |
-| `raw-sql` | `DB::statement()` / `DB::unprepared()`. Destructive SQL is high; SQL that only touches tables created in the same migration is low | medium |
+| `raw-sql` | `DB::statement()` / `DB::unprepared()`. Destructive SQL is high; SQL that only touches tables created in this run is low | medium |
 | `missing-down` | Missing or empty `down()` | low |
 
-Operations on a table created **in the same migration** are not flagged, because that table has no rows yet.
+Operations on a table created **in the same migration**, or by an earlier migration in the same run that has not been applied yet, are not flagged, because that table has no rows yet. (`column-change` is the exception: since Laravel 11, `->change()` drops modifiers you don't restate, even on an empty table.)
 
 ### Silencing a finding
 
@@ -122,6 +121,8 @@ Add a comment on the line, or the line above:
 ```php
 // migration-review-ignore: drop-column
 $table->dropColumn('legacy_flag');
+
+// migration-review-ignore: drop-table -- archived in the Q3 cleanup   ← anything after the ids is a free-form reason
 
 // migration-review-ignore        ← ignores every rule for the next line
 ```

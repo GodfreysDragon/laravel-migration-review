@@ -5,6 +5,7 @@ namespace MigrationReview\Analysis\Rules;
 use MigrationReview\Analysis\Finding;
 use MigrationReview\Analysis\RuleContext;
 use MigrationReview\Analysis\Severity;
+use MigrationReview\Support\Parsed\ParsedMigration;
 
 abstract class BaseRule implements Rule
 {
@@ -17,6 +18,14 @@ abstract class BaseRule implements Rule
         ?string $table = null,
     ): Finding {
         return new Finding($this->id(), $severity, $title, $message, $line, $suggestion, $table);
+    }
+
+    /**
+     * Whether the table is created by this migration or an earlier one in the same run, so it has no rows yet.
+     */
+    protected function isNewTable(ParsedMigration $migration, ?string $table, RuleContext $context): bool
+    {
+        return $migration->createsTable($table) || $context->isNew($table);
     }
 
     /**

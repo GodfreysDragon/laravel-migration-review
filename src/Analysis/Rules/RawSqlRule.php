@@ -36,9 +36,9 @@ class RawSqlRule extends BaseRule
             if ($sql !== null && preg_match(self::DESTRUCTIVE, $sql) === 1) {
                 $severity = Severity::High;
                 $message = 'This statement deletes data or schema objects, and raw SQL is not checked by the other rules.';
-            } elseif ($sql !== null && $this->onlyTouchesNewObjects($sql, $migration)) {
+            } elseif ($sql !== null && $this->onlyTouchesNewObjects($sql, $migration, $context)) {
                 $severity = Severity::Low;
-                $message = 'Raw SQL only affects tables created in this migration (or installs an extension), so there is no existing data at risk, but it is not portable across databases.';
+                $message = 'Raw SQL only affects tables created in this run (or installs an extension), so there is no existing data at risk, but it is not portable across databases.';
             } else {
                 $severity = Severity::Medium;
                 $message = 'Raw SQL bypasses the schema builder, is not portable across databases, and cannot be fully checked statically.';
@@ -56,7 +56,7 @@ class RawSqlRule extends BaseRule
         return $findings;
     }
 
-    private function onlyTouchesNewObjects(string $sql, ParsedMigration $migration): bool
+    private function onlyTouchesNewObjects(string $sql, ParsedMigration $migration, RuleContext $context): bool
     {
         if (preg_match('/^\s*CREATE\s+EXTENSION\b/i', $sql) === 1) {
             return true;
@@ -64,7 +64,7 @@ class RawSqlRule extends BaseRule
 
         preg_match_all(self::TABLE_REFERENCE, $sql, $matches);
         $tables = array_unique(array_map('strtolower', $matches[1]));
-        $created = array_map('strtolower', $migration->createdTables());
+        $created = array_map('strtolower', [...$migration->createdTables(), ...$context->newTables]);
 
         return $tables !== [] && array_diff($tables, $created) === [];
     }

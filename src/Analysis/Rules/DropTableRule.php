@@ -22,7 +22,7 @@ class DropTableRule extends BaseRule
                 continue;
             }
 
-            if ($migration->createsTable($operation->table)) {
+            if ($this->isNewTable($migration, $operation->table, $context)) {
                 continue;
             }
 
