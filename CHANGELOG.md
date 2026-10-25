@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-25
+
 ### Fixed
 - SQL previews built from database reads (such as SQLite table rebuilds for `->change()`, whose column list is empty in pretend mode) are now marked approximate, in the report notes and in what the AI review sees, so the AI no longer reports problems that exist only in the preview.
 - The AI review now gets row counts for tables a migration touches only through `DB::table()` writes.
