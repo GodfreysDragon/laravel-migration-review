@@ -87,22 +87,34 @@ class MigrationReviewer
 
         $report->findings = $this->analyzer->analyze($migration, $context);
 
+        $sqlApproximate = false;
+
         if ($withSql) {
             try {
-                $report->sql = $this->sqlPreviewer->preview($migration->file);
+                $preview = $this->sqlPreviewer->preview($migration->file);
+                $report->sql = $preview->statements;
+                $sqlApproximate = $preview->readsDatabase;
+
+                if ($sqlApproximate) {
+                    $report->notes[] = 'SQL preview is approximate: up() reads from the database, which returns nothing in pretend mode, so statements built from those reads (such as SQLite table rebuilds for ->change()) may be incomplete.';
+                }
             } catch (Throwable $e) {
                 $report->notes[] = 'SQL preview unavailable: '.$e->getMessage();
             }
         }
 
         if ($withAi && $this->aiReviewer !== null) {
-            $tables = array_filter(array_map(fn ($op) => $op->table, $migration->operations));
+            $tables = array_filter([
+                ...array_map(fn ($op) => $op->table, $migration->operations),
+                ...array_map(fn ($call) => $call->table, $migration->codeCalls),
+            ]);
 
             try {
                 $review = $this->aiReviewer->review(new ReviewInput(
                     migration: $migration->file,
                     driver: $context->driver,
                     sql: $report->sql,
+                    sqlApproximate: $sqlApproximate,
                     tableRows: array_intersect_key($context->tableRows, array_flip($tables)),
                     staticFindings: $report->findings,
                 ));

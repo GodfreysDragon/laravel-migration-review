@@ -56,6 +56,19 @@ class AiTest extends BaseTestCase
         $this->assertStringContainsString('add column "status" varchar(255) not null;', $prompt);
         $this->assertStringContainsString('- [high] line 12, drop-column: Drops `notes`', $prompt);
         $this->assertStringContainsString('path="tests/fixtures/migrations/2026_01_02_000000_add_status_to_orders_table.php"', $prompt);
+        $this->assertStringNotContainsString('Approximate', $prompt);
+    }
+
+    public function test_prompt_flags_an_approximate_sql_preview(): void
+    {
+        $input = new ReviewInput(
+            migration: TestCase::fixture('2026_01_03_000000_restructure_orders_table.php'),
+            driver: 'sqlite',
+            sql: ['create table "__temp__orders" ()'],
+            sqlApproximate: true,
+        );
+
+        $this->assertMatchesRegularExpression('/<sql_preview>\n\(Approximate: .+\)\ncreate table "__temp__orders" \(\);/', (new PromptBuilder)->user($input));
     }
 
     public function test_schema_is_strict(): void

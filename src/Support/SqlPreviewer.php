@@ -10,18 +10,18 @@ use RuntimeException;
  * Produces the SQL a migration's up() would run, using the connection's "pretend" mode.
  *
  * Nothing is executed against the database. Some schema operations (for example ->change()
- * on SQLite) need to inspect the live schema, so previews can fail; callers treat that as a note.
+ * on SQLite) need to inspect the live schema, which returns nothing in pretend mode, so their
+ * SQL can be incomplete; the preview reports when that may have happened.
  */
 class SqlPreviewer
 {
+    private const READ_STATEMENT = '/^\s*(select|pragma|show|describe)\b/i';
+
     public function __construct(
         private readonly DatabaseManager $db,
     ) {}
 
-    /**
-     * @return list<string>
-     */
-    public function preview(MigrationFile $file): array
+    public function preview(MigrationFile $file): SqlPreview
     {
         $migration = $this->resolve($file);
         $connection = $this->db->connection(method_exists($migration, 'getConnection') ? $migration->getConnection() : null);
@@ -41,9 +41,12 @@ class SqlPreviewer
         }
 
         // Drop read-only statements: they are schema introspection (e.g. for ->change()) or lookups, not changes.
-        $writes = array_filter($queries, fn (array $query) => preg_match('/^\s*(select|pragma|show|describe)\b/i', $query['query']) !== 1);
+        $writes = array_filter($queries, fn (array $query) => preg_match(self::READ_STATEMENT, $query['query']) !== 1);
 
-        return array_values(array_map(fn (array $query) => $this->inline($query['query'], $query['bindings']), $writes));
+        return new SqlPreview(
+            array_values(array_map(fn (array $query) => $this->inline($query['query'], $query['bindings']), $writes)),
+            readsDatabase: count($writes) < count($queries),
+        );
     }
 
     private function resolve(MigrationFile $file): object

@@ -26,7 +26,74 @@ $ php artisan migrate:review database/migrations/2026_01_02_000000_add_status_to
  Reviewed 1 migration: 1 high, 1 medium, 0 low.
 ```
 
-On PostgreSQL or MySQL the index advice is engine-specific (`CREATE INDEX CONCURRENTLY`, `ALGORITHM=INPLACE`). Above `large_table_rows` (1M by default) the index finding moves up to high. With an Anthropic API key set, Claude adds a one-line `AI:` summary under the file name, plus its own findings tagged `[ai]`.
+On PostgreSQL or MySQL the index advice is engine-specific (`CREATE INDEX CONCURRENTLY`, `ALGORITHM=INPLACE`). Above `large_table_rows` (1M by default) the index finding moves up to high.
+
+### With the AI review
+
+With an Anthropic API key set, Claude adds a one-line `AI:` summary under each file name, plus its own findings tagged `[ai]`. Here is a real run (Claude Opus 5.5, effort `medium`) on this backfill fixture, in a fresh Laravel 13 app on SQLite with 25,000 rows in `orders`:
+
+```php
+public function up(): void
+{
+    DB::table('orders')->whereNull('status')->update(['status' => 'pending']);
+
+    Order::query()->where('total_cents', 0)->each->recalculate();
+
+    DB::statement('DELETE FROM order_events');
+
+    // migration-review-ignore: data-manipulation
+    DB::table('orders')->where('currency', '')->update(['currency' => 'USD']);
+}
+
+public function down(): void {}
+```
+
+```text
+$ php artisan migrate:review        # excerpt: one of the three pending migrations
+
+  HIGH  2026_01_04_000000_backfill_order_totals
+      database/migrations/2026_01_04_000000_backfill_order_totals.php
+      AI: This migration should not run as written. Line 13 will throw at runtime, and line 15 permanently deletes every row in `order_events` with no way to restore it. The remaining backfills run inside one SQLite write transaction and cannot be reversed.
+
+       HIGH  :13 `->each->recalculate()` on a query builder throws at runtime [ai]
+        Higher-order proxies like `->each->method()` exist on Collections, not on the Eloquent Builder. The Builder's `__get` only proxies `orWhere`, `whereNot` and `orWhereNot`; for any other name, including `each`, it throws `Property [each] does not exist on the Eloquent builder instance`. The migration will therefore fail on every run. On SQLite, Laravel wraps the migration in a transaction, so line 11 is rolled back, but the deploy fails.
+        → Use `Order::query()->where('total_cents', 0)->lazyById()->each(fn ($o) => $o->recalculate());`. Better still, compute totals with a query-builder update so the migration does not depend on model code that may change later.
+
+       HIGH  :15 Runs raw SQL via DB::statement [raw-sql]
+        This statement deletes data or schema objects, and raw SQL is not checked by the other rules. SQL: DELETE FROM order_events
+        → Review the statement by hand and test it against a production-sized copy of the data.
+
+       HIGH  :15 Static finding understated: line 15 wipes all of order_events [ai]
+        The static rule flags this only as raw SQL. The real risk is that `DELETE FROM order_events` has no WHERE clause, so it permanently removes all order history and audit data. A backfill of order totals gives no reason to delete events, and the empty `down()` means the data is gone once this commits. It is also easy to miss in review because it sits among harmless-looking backfills.
+        → Remove the statement. If certain events really must be purged, scope the delete with a WHERE clause, take a backup or copy to an archive table first, and do it in a separate, explicitly reviewed migration.
+
+       MED   :11 Modifies data with orders->update() [data-manipulation]
+        Data changes inside a migration run in one long statement or transaction, holding row locks and blocking the deploy while they run. `orders` currently has about 25K rows.
+        → Move backfills into a queued job or Artisan command that processes rows in chunks (chunkById), and keep the migration schema-only.
+
+       MED   :13 Uses application model App\Models\Order::query() [data-manipulation]
+        Migrations are replayed on fresh databases long after they are written. If this model later changes (columns, casts, scopes, observers, or is deleted), this migration breaks.
+        → Use DB::table() inside migrations so they depend only on the schema at that point in time.
+
+       MED   :13 Offset chunking over a column being modified will skip rows [ai]
+        Once line 13 is fixed, a `chunk()`/`each()`-style iteration paginates with OFFSET. `recalculate()` presumably makes `total_cents` non-zero, so processed rows drop out of the `total_cents = 0` filter. Each later page then skips rows, leaving some orders un-backfilled with no error.
+        → Iterate with `chunkById()`/`lazyById()`, which page by primary key, so rows leaving the filter do not shift later pages.
+
+       MED   :13 Whole backfill holds SQLite's single write lock for its duration [ai]
+        SQLite allows only one writer, and Laravel runs this migration in one transaction. Recalculating per model over up to ~25k orders, plus the updates and delete, blocks every other write to the database until it commits. The app will see `database is locked` errors or stalled requests during the deploy.
+        → Move the per-row recalculation out of the migration into a queued or artisan backfill job that commits in small batches, or run the migration in a maintenance window.
+
+       LOW   :7 Empty down() method [missing-down]
+        This migration cannot be rolled back with `php artisan migrate:rollback`, so a bad deploy has to be fixed forward.
+        → Implement down() to reverse up(), or document why the change is intentionally irreversible.
+
+       LOW   :18 Suppressed currency backfill assumes blank means USD [ai]
+        The ignore comment on line 17 hides line 18 from review. It overwrites every empty currency with 'USD', which is wrong for any non-USD order that was saved with a blank value. It also misses rows where currency is NULL rather than an empty string. Like the other changes, it cannot be undone.
+        → Check the affected rows first, for example whether the order's store or customer region implies a currency. Record the IDs that were changed so the update can be reverted, and decide whether NULL values should be handled too.
+      note: SQL preview unavailable: Class "App\Models\Order" not found
+```
+
+The rules flag the shape of each risky operation. Claude catches what needs judgement: line 13 can never run, the raw `DELETE` is worse than a generic raw-SQL warning, and the line hidden by the ignore comment is still wrong. AI output varies between runs; reviews are cached, so re-running on an unchanged migration returns the same result.
 
 ## Why
 

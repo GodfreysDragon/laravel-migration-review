@@ -12,7 +12,7 @@ class PromptBuilder
     /**
      * Bump when the prompt changes so cached reviews are not reused.
      */
-    public const VERSION = '1';
+    public const VERSION = '2';
 
     public function system(): string
     {
@@ -40,6 +40,12 @@ PROMPT;
     {
         $source = $this->numbered($input->migration->contents);
         $sql = $input->sql === [] ? '(SQL preview not available)' : implode(";\n", $input->sql).';';
+
+        if ($input->sql !== [] && $input->sqlApproximate) {
+            $sql = '(Approximate: up() read from the database while this preview was generated in pretend mode, and those reads returned nothing. '
+                .'Statements built from them, such as a SQLite table rebuild for ->change(), may have empty or missing column lists that will not appear in the real run. '
+                ."Do not report problems that exist only in such statements; judge them from the migration source instead.)\n".$sql;
+        }
 
         $rows = [];
         foreach ($input->tableRows as $table => $count) {

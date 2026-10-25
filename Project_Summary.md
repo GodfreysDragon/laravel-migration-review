@@ -40,19 +40,18 @@ It has two layers:
 
 | Area | Status |
 | --- | --- |
-| Unit and feature tests | ✅ 59 tests, all passing on SQLite |
+| Unit and feature tests | ✅ 62 tests, all passing on SQLite |
 | MySQL and PostgreSQL | ✅ Driver tests (row-count queries, driver-specific findings, SQL preview, batch-created tables) pass against MySQL 8.4 and PostgreSQL 16; CI runs them in service containers |
 | Static analysis | ✅ PHPStan level 8 (Larastan), no errors |
 | Laravel 12 compatibility | ✅ Full suite passes against Laravel 12.69 / Testbench 10 (scratch install) |
 | Laravel 11 | ❌ Dropped: every 11.x release is blocked by Packagist security advisories, so Composer won't install it by default |
 | Claude request/response handling | ✅ Tested through the real SDK with a stubbed HTTP transport: request body, beta header, fallbacks, schema, refusal, invalid JSON, 401 |
-| Live Claude call | ⚠️ Not run: no `ANTHROPIC_API_KEY` on this machine |
+| Live Claude call | ✅ Run against the fixtures in a fresh Laravel 13 app (SQLite, 25K-row `orders`). The real output is in the README. The run surfaced two bugs, both fixed: SQLite pretend-mode previews were passed to Claude as real SQL, and row counts were missing for tables touched only by `DB::table()` |
 | Real-world run | ✅ Ran read-only against `saas-boilerplate` and `rag-doc-qa` migrations: 16 migrations, 1 genuine finding (FK added to existing `users`). The raw-sql rule was retuned after it over-flagged pgvector setup on a newly created table |
 | Code style | ✅ Pint (Laravel preset) passes |
-| CI workflow | ✅ Green on GitHub Actions for PHP 8.2–8.4 × Laravel 12/13 + Pint. The MySQL/PostgreSQL and PHPStan jobs were added later and first run when this branch is opened as a PR |
+| CI workflow | ✅ Green on GitHub Actions: PHP 8.2–8.4 × Laravel 12/13, real MySQL and PostgreSQL, Pint and PHPStan |
 | Published | ✅ On GitHub as `GodfreysDragon/laravel-migration-review`. Deliberately not on Packagist; installs via a Composer `vcs` repository |
 
 ## Remaining work
 
-1. Add `ANTHROPIC_API_KEY` locally and run `php artisan migrate:review --all` on a real app to capture genuine AI output for the README.
-2. Optionally, a small demo repo with a PR that trips the rules, for a screenshot of the inline annotations.
+1. Optionally, a small demo repo with a PR that trips the rules, for a screenshot of the inline annotations.
