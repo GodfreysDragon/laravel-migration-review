@@ -1,6 +1,7 @@
 # Laravel Migration Review
 
 [![Tests](https://github.com/GodfreysDragon/laravel-migration-review/actions/workflows/tests.yml/badge.svg)](https://github.com/GodfreysDragon/laravel-migration-review/actions/workflows/tests.yml)
+[![Latest version](https://img.shields.io/packagist/v/godfreysdragon/laravel-migration-review.svg)](https://packagist.org/packages/godfreysdragon/laravel-migration-review)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 
 **Catch dangerous migrations before they reach production.**
@@ -115,19 +116,9 @@ This package checks for all of these on every pull request.
 
 ## Installation
 
-The package is not on Packagist. Install it from GitHub by adding the repository to your app's `composer.json`:
-
-```json
-"repositories": [
-    { "type": "vcs", "url": "https://github.com/GodfreysDragon/laravel-migration-review" }
-]
-```
-
 ```bash
-composer require --dev godfreysdragon/laravel-migration-review:^0.2
+composer require --dev godfreysdragon/laravel-migration-review
 ```
-
-> **Windows:** if `composer` is a `.bat` wrapper (Laravel Herd, for example), cmd strips the `^`, so the constraint is saved as an exact `0.2`. Use the equivalent `~0.2.0` instead.
 
 Requires PHP 8.2+ and Laravel 12 or 13. The service provider is auto-discovered.
 
