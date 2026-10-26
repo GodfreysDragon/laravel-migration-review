@@ -1,6 +1,6 @@
 # Project Summary: Laravel Migration Review
 
-_Last updated: 2026-10-25 (v0.1.0)_
+_Last updated: 2026-10-26 (v0.2.0)_
 
 ## What it is
 
@@ -52,7 +52,7 @@ It has two layers:
 | Code style | ✅ Pint (Laravel preset) passes |
 | CI workflow | ✅ Green on GitHub Actions: PHP 8.2–8.4 × Laravel 12/13, real MySQL and PostgreSQL, Pint and PHPStan |
 | Published | ✅ Public on GitHub as `GodfreysDragon/laravel-migration-review` and on [Packagist](https://packagist.org/packages/godfreysdragon/laravel-migration-review) as `godfreysdragon/laravel-migration-review`, after the 0.2.0 security review |
-| Outsider install | ✅ Installed v0.1.1 into a fresh Laravel 13 app from the README steps, with no GitHub credentials available to Composer or git |
+| Outsider install | ✅ `composer require --dev godfreysdragon/laravel-migration-review` installed v0.2 from Packagist into a fresh Laravel 13 app with no GitHub credentials available to Composer or git, and `migrate:review` ran. The demo repo installs from Packagist too |
 | GitHub annotations | ✅ The README workflow runs in [`laravel-migration-review-demo`](https://github.com/GodfreysDragon/laravel-migration-review-demo); its PR #2 shows all six findings inline on the right lines, and the check fails on the two high ones. Screenshot in the README |
 
 ## Remaining work
