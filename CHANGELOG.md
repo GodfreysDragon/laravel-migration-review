@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-26
+
 ### Changed
 - Published on Packagist: install with `composer require --dev godfreysdragon/laravel-migration-review`. The `vcs` repository entry is no longer needed and can be removed from your `composer.json`.
 
