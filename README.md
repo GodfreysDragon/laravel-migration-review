@@ -243,6 +243,12 @@ class NoEnumColumnsRule extends BaseRule
 
 ### GitHub Actions: inline annotations on the PR
 
+With `--format=github`, each finding appears on its line in the PR's **Files changed** tab. This is a real run from the [demo repository](https://github.com/GodfreysDragon/laravel-migration-review-demo) ([PR #2](https://github.com/GodfreysDragon/laravel-migration-review-demo/pull/2)), using the workflow below with the changed-files step ([full file](https://github.com/GodfreysDragon/laravel-migration-review-demo/blob/main/.github/workflows/migration-review.yml)):
+
+![Migration review findings shown as inline annotations on a GitHub pull request](docs/images/github-annotations.png)
+
+High findings are errors, medium are warnings and low are notices. With `--fail-on=high` the check fails, so the PR can't merge while branch protection requires it.
+
 ```yaml
 # .github/workflows/migration-review.yml
 name: Migration review
@@ -255,7 +261,7 @@ jobs:
   review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
