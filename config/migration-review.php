@@ -41,13 +41,17 @@ return [
     | severity level when a table has at least this many rows. Row counts come
     | from database statistics and are only read when `table_stats` is on.
     |
+    | The SQL preview calls each migration's up() in pretend mode. Queries on the
+    | migration's connection are captured, not run, but any other code in up()
+    | runs with the app's full access. Turn it off for code you don't trust.
+    |
     */
 
     'large_table_rows' => 1_000_000,
 
     'table_stats' => true,
 
-    'sql_preview' => true,
+    'sql_preview' => env('MIGRATION_REVIEW_SQL_PREVIEW', true),
 
     /*
     |--------------------------------------------------------------------------

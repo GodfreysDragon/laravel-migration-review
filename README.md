@@ -169,8 +169,8 @@ php artisan migrate:review --format=markdown --output=review.md
 
 ### How it works
 
-1. **Parse.** Each migration is parsed into an AST with [nikic/php-parser](https://github.com/nikic/PHP-Parser). The migration is never executed for analysis, so the rules work without a database.
-2. **Context.** Row counts for the affected tables come from database statistics: `information_schema` on MySQL, `pg_class.reltuples` on PostgreSQL, `sys.partitions` on SQL Server, `COUNT(*)` on SQLite. The SQL each migration would run comes from Laravel's `pretend` mode, so nothing is written.
+1. **Parse.** Each migration is parsed into an AST with [nikic/php-parser](https://github.com/nikic/PHP-Parser). The rules work on that AST alone, so they never run the migration and need no database.
+2. **Context.** Row counts for the affected tables come from database statistics: `information_schema` on MySQL, `pg_class.reltuples` on PostgreSQL, `sys.partitions` on SQL Server, `COUNT(*)` on SQLite. The SQL each migration would run comes from calling `up()` in Laravel's `pretend` mode, which captures the queries on the migration's connection instead of running them. Everything else in `up()` still runs: see [Security](#security).
 3. **Rules.** Each rule reports a severity, an explanation and a concrete fix. Lock-sensitive findings move up one severity level on tables above `large_table_rows`.
 4. **AI review (optional).** Claude receives the numbered source, the SQL preview, the driver, the row counts and the rule findings. It reports only what the rules missed, or where a rule got it wrong. Responses use [structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs), so they are always valid JSON.
 
@@ -257,6 +257,9 @@ on:
   pull_request:
     paths: ['database/migrations/**']
 
+permissions:
+  contents: read
+
 jobs:
   review:
     runs-on: ubuntu-latest
@@ -284,13 +287,15 @@ On a fresh CI database every migration counts as pending, so to review only the 
 
 (Use `actions/checkout` with `fetch-depth: 0` so the base branch is available.)
 
+Keep the `pull_request` trigger. The SQL preview runs the PR's `up()` code, and `pull_request` doesn't give secrets to PRs from forks. Never switch to `pull_request_target` to get the API key into fork PRs: that runs untrusted code with your secrets. See [Security](#security).
+
 ### PR comment
 
 `--format=markdown --output=migration-review.md` writes a table you can post with any "comment on PR" action.
 
 ### Against production statistics
 
-Severity escalation only works when row counts are known. Run the command with `--database=` pointing at a read replica (or a production-sized staging copy) to get them. The lookups are read-only queries against catalog tables.
+Severity escalation only works when row counts are known. Run the command with `--database=` pointing at a read replica (or a production-sized staging copy) to get them. The lookups are read-only queries against catalog tables. Add `--no-sql` here unless you trust every migration being reviewed, since the SQL preview runs `up()` with the app's access to that environment.
 
 ## The AI review
 
@@ -318,7 +323,7 @@ return [
     ],
     'large_table_rows' => 1_000_000,   // escalate lock-sensitive findings above this
     'table_stats' => true,
-    'sql_preview' => true,
+    'sql_preview' => env('MIGRATION_REVIEW_SQL_PREVIEW', true),   // runs up() in pretend mode; see Security
     'fail_on' => env('MIGRATION_REVIEW_FAIL_ON', 'none'),
     'rules' => [/* ... */],
     'disabled_rules' => [],
@@ -330,6 +335,20 @@ return [
 - The rules detect operations written with the schema builder and `DB` facade. Migrations that build table names dynamically or hide logic in helper classes get less precise results, and the AI review is the safety net there.
 - The SQL preview runs `up()` in pretend mode. Migrations that read data or call application code may not preview, which is reported as a note.
 - Row counts are estimates from database statistics. They are accurate enough for "is this table big?", but not exact.
+
+## Security
+
+**The static rules never run migration code.** They read the file's syntax tree only.
+
+**The SQL preview does run it.** To show the SQL, the command loads each migration and calls `up()` inside Laravel's `pretend` mode, the same mechanism as `php artisan migrate --pretend`. Pretend mode captures queries on the migration's own connection instead of running them. Everything else in `up()` runs normally, with your app's full access: file writes, HTTP calls, queries on any other connection, and reads of environment variables such as `ANTHROPIC_API_KEY`. In practice:
+
+- Reviewing a migration is as trusting as running it, or running the tests of the PR that adds it. Don't review code you wouldn't run.
+- For code you don't trust, turn the preview off with `--no-sql` or `MIGRATION_REVIEW_SQL_PREVIEW=false`. The static rules and the AI review still work without it.
+- In GitHub Actions, use the `pull_request` trigger, which gives no secrets to PRs from forks, and never `pull_request_target`.
+
+**What leaves your machine.** Only the AI review sends anything, and only when an API key is set. See [what is sent](#the-ai-review).
+
+Please report vulnerabilities privately through [GitHub security advisories](https://github.com/GodfreysDragon/laravel-migration-review/security/advisories/new), not in a public issue.
 
 ## Development
 
