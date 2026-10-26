@@ -188,6 +188,32 @@ class ReviewCommandTest extends TestCase
         $this->assertStringContainsString('fixtures/migrations/2026_01_03_000000_restructure_orders_table.php,line=17,', Artisan::output());
     }
 
+    public function test_up_runs_only_when_the_sql_preview_is_on(): void
+    {
+        $dir = sys_get_temp_dir().'/migration-review-'.uniqid();
+        mkdir($dir);
+        $marker = $dir.'/up-ran.txt';
+        file_put_contents($dir.'/2026_02_01_000000_touch_marker.php', '<?php return new class extends Illuminate\Database\Migrations\Migration {'
+            .' public function up(): void { file_put_contents('.var_export($marker, true).", 'ran'); } };");
+
+        try {
+            $this->runJson(['paths' => [$dir], '--no-sql' => true]);
+            $this->assertFileDoesNotExist($marker);
+
+            config(['migration-review.sql_preview' => false]);
+            $this->runJson(['paths' => [$dir]]);
+            $this->assertFileDoesNotExist($marker);
+
+            // Documented behaviour: pretend mode captures queries, but other code in up() runs.
+            config(['migration-review.sql_preview' => true]);
+            $this->runJson(['paths' => [$dir]]);
+            $this->assertFileExists($marker);
+        } finally {
+            array_map('unlink', glob($dir.'/*') ?: []);
+            rmdir($dir);
+        }
+    }
+
     public function test_nothing_to_review(): void
     {
         $this->artisan('migrate:review')->expectsOutputToContain('No migrations to review')->assertSuccessful();

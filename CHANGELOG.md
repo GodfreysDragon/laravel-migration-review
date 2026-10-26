@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+- `MIGRATION_REVIEW_SQL_PREVIEW` environment variable to turn the SQL preview off.
+- A Security section in the README and a `SECURITY.md` with private vulnerability reporting.
+
+### Fixed
+- The docs no longer claim migrations are never executed. The SQL preview calls `up()` in pretend mode, which captures queries on the migration's connection but runs any other code in `up()`; the README now says so and explains when to use `--no-sql`.
+
 ## [0.1.1] - 2026-10-25
 
 ### Fixed

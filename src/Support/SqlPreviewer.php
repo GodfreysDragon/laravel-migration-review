@@ -9,7 +9,9 @@ use RuntimeException;
 /**
  * Produces the SQL a migration's up() would run, using the connection's "pretend" mode.
  *
- * Nothing is executed against the database. Some schema operations (for example ->change()
+ * This calls up(). Queries on the migration's connection are captured instead of executed, but
+ * everything else in up() runs for real (file writes, HTTP calls, queries on other connections),
+ * so only preview code you would be willing to run. Some schema operations (for example ->change()
  * on SQLite) need to inspect the live schema, which returns nothing in pretend mode, so their
  * SQL can be incomplete; the preview reports when that may have happened.
  */
