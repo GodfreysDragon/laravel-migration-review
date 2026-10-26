@@ -51,7 +51,7 @@ It has two layers:
 | Real-world run | ✅ Ran read-only against `saas-boilerplate` and `rag-doc-qa` migrations: 16 migrations, 1 genuine finding (FK added to existing `users`). The raw-sql rule was retuned after it over-flagged pgvector setup on a newly created table |
 | Code style | ✅ Pint (Laravel preset) passes |
 | CI workflow | ✅ Green on GitHub Actions: PHP 8.2–8.4 × Laravel 12/13, real MySQL and PostgreSQL, Pint and PHPStan |
-| Published | ✅ Public on GitHub as `GodfreysDragon/laravel-migration-review`. Deliberately not on Packagist; installs via a Composer `vcs` repository |
+| Published | ✅ Public on GitHub as `GodfreysDragon/laravel-migration-review` and on [Packagist](https://packagist.org/packages/godfreysdragon/laravel-migration-review) as `godfreysdragon/laravel-migration-review`, after the 0.2.0 security review |
 | Outsider install | ✅ Installed v0.1.1 into a fresh Laravel 13 app from the README steps, with no GitHub credentials available to Composer or git |
 | GitHub annotations | ✅ The README workflow runs in [`laravel-migration-review-demo`](https://github.com/GodfreysDragon/laravel-migration-review-demo); its PR #2 shows all six findings inline on the right lines, and the check fails on the two high ones. Screenshot in the README |
 
