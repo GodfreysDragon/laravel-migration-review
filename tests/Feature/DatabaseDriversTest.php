@@ -1,12 +1,12 @@
 <?php
 
-namespace MigrationReview\Tests\Feature;
+namespace GodfreysDragon\MigrationReview\Tests\Feature;
 
+use GodfreysDragon\MigrationReview\Support\TableStats;
+use GodfreysDragon\MigrationReview\Tests\TestCase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use MigrationReview\Support\TableStats;
-use MigrationReview\Tests\TestCase;
 
 /**
  * Runs against a real MySQL or PostgreSQL server, which CI provides as a service container.

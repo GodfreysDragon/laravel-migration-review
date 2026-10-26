@@ -1,9 +1,9 @@
 <?php
 
-namespace MigrationReview\Output;
+namespace GodfreysDragon\MigrationReview\Output;
 
-use MigrationReview\Analysis\Finding;
-use MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Analysis\Finding;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
 
 /**
  * Markdown suitable for a pull request comment.
@@ -25,11 +25,11 @@ class MarkdownRenderer implements Renderer
                 null => '✅',
             };
 
-            $out[] = "### {$icon} `{$report->migration->name}`";
+            $out[] = "### {$icon} `".str_replace('`', '', ControlCharacters::strip($report->migration->name)).'`';
             $out[] = '';
 
             if ($report->aiSummary !== null) {
-                $out[] = '> '.$report->aiSummary;
+                $out[] = '> '.$this->inline($report->aiSummary);
                 $out[] = '';
             }
 
@@ -47,7 +47,7 @@ class MarkdownRenderer implements Renderer
             $out[] = '';
 
             foreach ($report->notes as $note) {
-                $out[] = "_Note: {$note}_";
+                $out[] = '_Note: '.$this->inline($note).'_';
                 $out[] = '';
             }
         }
@@ -59,10 +59,34 @@ class MarkdownRenderer implements Renderer
 
     private function cell(Finding $finding): string
     {
-        $text = '**'.$finding->title.'**'.($finding->source === Finding::SOURCE_AI ? ' _(AI)_' : '')
-            .'<br>'.$finding->message
-            .($finding->suggestion !== null ? '<br>💡 '.$finding->suggestion : '');
+        return '**'.$this->inline($finding->title, true).'**'.($finding->source === Finding::SOURCE_AI ? ' _(AI)_' : '')
+            .'<br>'.$this->inline($finding->message, true)
+            .($finding->suggestion !== null ? '<br>💡 '.$this->inline($finding->suggestion, true) : '');
+    }
 
-        return str_replace(['|', "\n"], ['\|', ' '], $text);
+    /**
+     * Escapes text that comes from migration source, exceptions or the AI, so a PR comment
+     * can't gain links, images, HTML or @mentions from it. `Code spans` are kept: GitHub
+     * renders nothing inside them.
+     */
+    private function inline(string $text, bool $tableCell = false): string
+    {
+        $parts = preg_split('/(`[^`\n]+`)/', str_replace(["\r\n", "\r", "\n"], ' ', ControlCharacters::strip($text)), -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY) ?: [];
+        $out = '';
+
+        foreach ($parts as $part) {
+            if (str_starts_with($part, '`') && str_ends_with($part, '`') && strlen($part) > 1) {
+                $out .= $tableCell ? str_replace('|', '\|', $part) : $part;
+
+                continue;
+            }
+
+            $part = htmlspecialchars($part, ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $part = (string) preg_replace('/([\\\\`*_\[\]~!|#])/', '\\\\$1', $part);
+            // A zero-width space after @ stops GitHub from treating it as a mention.
+            $out .= str_replace('@', "@\u{200B}", $part);
+        }
+
+        return $out;
     }
 }

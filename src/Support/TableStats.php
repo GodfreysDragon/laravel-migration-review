@@ -1,6 +1,6 @@
 <?php
 
-namespace MigrationReview\Support;
+namespace GodfreysDragon\MigrationReview\Support;
 
 use Illuminate\Database\Connection;
 use Throwable;

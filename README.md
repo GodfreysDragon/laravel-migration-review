@@ -124,10 +124,10 @@ The package is not on Packagist. Install it from GitHub by adding the repository
 ```
 
 ```bash
-composer require --dev godfreysdragon/laravel-migration-review:^0.1
+composer require --dev godfreysdragon/laravel-migration-review:^0.2
 ```
 
-> **Windows:** if `composer` is a `.bat` wrapper (Laravel Herd, for example), cmd strips the `^`, so the constraint is saved as an exact `0.1`. Use the equivalent `~0.1.0` instead.
+> **Windows:** if `composer` is a `.bat` wrapper (Laravel Herd, for example), cmd strips the `^`, so the constraint is saved as an exact `0.2`. Use the equivalent `~0.2.0` instead.
 
 Requires PHP 8.2+ and Laravel 12 or 13. The service provider is auto-discovered.
 
@@ -207,13 +207,13 @@ Disable a rule globally with `disabled_rules` in `config/migration-review.php`.
 
 ### Custom rules
 
-Implement `MigrationReview\Analysis\Rules\Rule` (or extend `BaseRule`) and add the class to `rules` in the config:
+Implement `GodfreysDragon\MigrationReview\Analysis\Rules\Rule` (or extend `BaseRule`) and add the class to `rules` in the config:
 
 ```php
-use MigrationReview\Analysis\RuleContext;
-use MigrationReview\Analysis\Rules\BaseRule;
-use MigrationReview\Analysis\Severity;
-use MigrationReview\Support\Parsed\ParsedMigration;
+use GodfreysDragon\MigrationReview\Analysis\RuleContext;
+use GodfreysDragon\MigrationReview\Analysis\Rules\BaseRule;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Support\Parsed\ParsedMigration;
 
 class NoEnumColumnsRule extends BaseRule
 {
@@ -302,10 +302,10 @@ Severity escalation only works when row counts are known. Run the command with `
 | | |
 | --- | --- |
 | **Model** | `claude-opus-5-5` by default (`MIGRATION_REVIEW_MODEL`), effort `medium` (`MIGRATION_REVIEW_EFFORT`). |
-| **What is sent** | The migration file, its SQL preview, the database driver, row counts of affected tables, and the rule findings. No data rows, credentials or other source files. |
+| **What is sent** | The migration file, its SQL preview with bound values replaced by `?`, the database driver, row counts of affected tables, and the rule findings. No data rows, credentials or other source files. Bound values are left out because they can be computed at runtime, for example from `config()` or `env()`; the local report still shows them. |
 | **Cost** | Usually a few thousand input tokens per migration, roughly a few cents. Reviews are cached by a hash of everything sent (30 days by default), so re-running CI on an unchanged migration is free. |
 | **Failure handling** | Rate limits, auth errors, refusals and malformed replies become a `note:` on the report. The static findings are still reported and the exit code is unaffected. Server-side fallbacks are enabled, so a request the model declines is retried on another model. |
-| **Prompt injection** | Migration source is passed as delimited data, and the model is told to ignore instructions inside it. |
+| **Prompt injection** | Migration source is passed as delimited data that can't close its own section, and the model is told to ignore instructions inside it. The model can only add findings: it can't remove or lower the rule findings, so it can't make a failing check pass. |
 
 Turn it off with `MIGRATION_REVIEW_AI=false` or `--no-ai`.
 
@@ -346,7 +346,9 @@ return [
 - For code you don't trust, turn the preview off with `--no-sql` or `MIGRATION_REVIEW_SQL_PREVIEW=false`. The static rules and the AI review still work without it.
 - In GitHub Actions, use the `pull_request` trigger, which gives no secrets to PRs from forks, and never `pull_request_target`.
 
-**What leaves your machine.** Only the AI review sends anything, and only when an API key is set. See [what is sent](#the-ai-review).
+**What leaves your machine.** Only the AI review sends anything, and only when an API key is set. Bound values in the SQL are replaced by `?` first. See [what is sent](#the-ai-review). Locally, `--show-sql` and the JSON report do include the real values, so treat CI logs and report files like any other output of your app.
+
+**Output.** Report text can come from migration source, error messages or the AI, so it's escaped for each format: control characters are stripped everywhere, the Markdown format neutralizes links, images, HTML and `@mentions` before you post it as a PR comment, and GitHub annotations are encoded as workflow command data.
 
 Please report vulnerabilities privately through [GitHub security advisories](https://github.com/GodfreysDragon/laravel-migration-review/security/advisories/new), not in a public issue.
 

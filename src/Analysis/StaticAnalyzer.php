@@ -1,11 +1,11 @@
 <?php
 
-namespace MigrationReview\Analysis;
+namespace GodfreysDragon\MigrationReview\Analysis;
 
-use MigrationReview\Analysis\Rules\Rule;
-use MigrationReview\Support\MigrationFile;
-use MigrationReview\Support\MigrationParser;
-use MigrationReview\Support\Parsed\ParsedMigration;
+use GodfreysDragon\MigrationReview\Analysis\Rules\Rule;
+use GodfreysDragon\MigrationReview\Support\MigrationFile;
+use GodfreysDragon\MigrationReview\Support\MigrationParser;
+use GodfreysDragon\MigrationReview\Support\Parsed\ParsedMigration;
 
 /**
  * Runs every enabled rule against a migration and applies inline ignore comments.

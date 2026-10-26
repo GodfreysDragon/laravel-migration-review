@@ -1,6 +1,6 @@
 <?php
 
-namespace MigrationReview\Analysis;
+namespace GodfreysDragon\MigrationReview\Analysis;
 
 enum Severity: string
 {

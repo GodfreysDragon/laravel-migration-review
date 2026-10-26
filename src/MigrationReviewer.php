@@ -1,20 +1,20 @@
 <?php
 
-namespace MigrationReview;
+namespace GodfreysDragon\MigrationReview;
 
+use GodfreysDragon\MigrationReview\Ai\AiReviewer;
+use GodfreysDragon\MigrationReview\Ai\AiReviewFailed;
+use GodfreysDragon\MigrationReview\Ai\ReviewInput;
+use GodfreysDragon\MigrationReview\Analysis\Finding;
+use GodfreysDragon\MigrationReview\Analysis\MigrationReport;
+use GodfreysDragon\MigrationReview\Analysis\RuleContext;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Analysis\StaticAnalyzer;
+use GodfreysDragon\MigrationReview\Support\MigrationFile;
+use GodfreysDragon\MigrationReview\Support\Parsed\ParsedMigration;
+use GodfreysDragon\MigrationReview\Support\SqlPreviewer;
+use GodfreysDragon\MigrationReview\Support\TableStats;
 use Illuminate\Database\Connection;
-use MigrationReview\Ai\AiReviewer;
-use MigrationReview\Ai\AiReviewFailed;
-use MigrationReview\Ai\ReviewInput;
-use MigrationReview\Analysis\Finding;
-use MigrationReview\Analysis\MigrationReport;
-use MigrationReview\Analysis\RuleContext;
-use MigrationReview\Analysis\Severity;
-use MigrationReview\Analysis\StaticAnalyzer;
-use MigrationReview\Support\MigrationFile;
-use MigrationReview\Support\Parsed\ParsedMigration;
-use MigrationReview\Support\SqlPreviewer;
-use MigrationReview\Support\TableStats;
 use Throwable;
 
 /**
@@ -88,11 +88,13 @@ class MigrationReviewer
         $report->findings = $this->analyzer->analyze($migration, $context);
 
         $sqlApproximate = false;
+        $sqlForAi = [];
 
         if ($withSql) {
             try {
                 $preview = $this->sqlPreviewer->preview($migration->file);
                 $report->sql = $preview->statements;
+                $sqlForAi = $preview->parameterized;
                 $sqlApproximate = $preview->readsDatabase;
 
                 if ($sqlApproximate) {
@@ -113,7 +115,7 @@ class MigrationReviewer
                 $review = $this->aiReviewer->review(new ReviewInput(
                     migration: $migration->file,
                     driver: $context->driver,
-                    sql: $report->sql,
+                    sql: $sqlForAi,
                     sqlApproximate: $sqlApproximate,
                     tableRows: array_intersect_key($context->tableRows, array_flip($tables)),
                     staticFindings: $report->findings,

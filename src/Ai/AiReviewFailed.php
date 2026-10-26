@@ -1,6 +1,6 @@
 <?php
 
-namespace MigrationReview\Ai;
+namespace GodfreysDragon\MigrationReview\Ai;
 
 use RuntimeException;
 

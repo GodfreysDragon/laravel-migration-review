@@ -1,8 +1,8 @@
 <?php
 
-namespace MigrationReview\Support\Parsed;
+namespace GodfreysDragon\MigrationReview\Support\Parsed;
 
-use MigrationReview\Support\MigrationFile;
+use GodfreysDragon\MigrationReview\Support\MigrationFile;
 
 final class ParsedMigration
 {

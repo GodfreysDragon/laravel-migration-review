@@ -1,6 +1,6 @@
 <?php
 
-namespace MigrationReview\Support\Parsed;
+namespace GodfreysDragon\MigrationReview\Support\Parsed;
 
 /**
  * One fluent chain on a Blueprint, flattened in source order.

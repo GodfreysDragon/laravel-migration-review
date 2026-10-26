@@ -1,9 +1,9 @@
 <?php
 
-namespace MigrationReview\Tests;
+namespace GodfreysDragon\MigrationReview\Tests;
 
-use MigrationReview\MigrationReviewServiceProvider;
-use MigrationReview\Support\MigrationFile;
+use GodfreysDragon\MigrationReview\MigrationReviewServiceProvider;
+use GodfreysDragon\MigrationReview\Support\MigrationFile;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra

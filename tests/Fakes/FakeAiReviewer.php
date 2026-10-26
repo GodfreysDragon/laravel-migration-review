@@ -1,11 +1,11 @@
 <?php
 
-namespace MigrationReview\Tests\Fakes;
+namespace GodfreysDragon\MigrationReview\Tests\Fakes;
 
-use MigrationReview\Ai\AiReview;
-use MigrationReview\Ai\AiReviewer;
-use MigrationReview\Ai\AiReviewFailed;
-use MigrationReview\Ai\ReviewInput;
+use GodfreysDragon\MigrationReview\Ai\AiReview;
+use GodfreysDragon\MigrationReview\Ai\AiReviewer;
+use GodfreysDragon\MigrationReview\Ai\AiReviewFailed;
+use GodfreysDragon\MigrationReview\Ai\ReviewInput;
 
 class FakeAiReviewer implements AiReviewer
 {

@@ -40,7 +40,8 @@ It has two layers:
 
 | Area | Status |
 | --- | --- |
-| Unit and feature tests | ✅ 62 tests, all passing on SQLite |
+| Unit and feature tests | ✅ 67 tests, all passing on SQLite |
+| Security review | ✅ Done before Packagist (0.2.0): documented that the SQL preview runs `up()`, added `--no-sql` guidance and `MIGRATION_REVIEW_SQL_PREVIEW`, kept bound values out of AI requests, escaped Markdown and terminal output, hardened the prompt delimiters, read-only CI token, private vulnerability reporting, vendor-prefixed namespace. `composer audit` clean; no secrets in git history |
 | MySQL and PostgreSQL | ✅ Driver tests (row-count queries, driver-specific findings, SQL preview, batch-created tables) pass against MySQL 8.4 and PostgreSQL 16; CI runs them in service containers |
 | Static analysis | ✅ PHPStan level 8 (Larastan), no errors |
 | Laravel 12 compatibility | ✅ Full suite passes against Laravel 12.69 / Testbench 10 (scratch install) |

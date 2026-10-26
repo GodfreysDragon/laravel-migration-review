@@ -1,6 +1,6 @@
 <?php
 
-namespace MigrationReview\Support\Parsed;
+namespace GodfreysDragon\MigrationReview\Support\Parsed;
 
 /**
  * A Schema facade call such as Schema::table('users', fn (Blueprint $table) => ...).

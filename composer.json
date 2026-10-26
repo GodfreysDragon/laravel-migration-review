@@ -23,6 +23,7 @@
     ],
     "require": {
         "php": "^8.2",
+        "ext-mbstring": "*",
         "anthropic-ai/sdk": "^0.54",
         "illuminate/console": "^12.0|^13.0",
         "illuminate/database": "^12.0|^13.0",
@@ -38,12 +39,12 @@
     },
     "autoload": {
         "psr-4": {
-            "MigrationReview\\": "src/"
+            "GodfreysDragon\\MigrationReview\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "MigrationReview\\Tests\\": "tests/"
+            "GodfreysDragon\\MigrationReview\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -54,7 +55,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "MigrationReview\\MigrationReviewServiceProvider"
+                "GodfreysDragon\\MigrationReview\\MigrationReviewServiceProvider"
             ]
         }
     },

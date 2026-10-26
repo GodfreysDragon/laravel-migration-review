@@ -1,15 +1,15 @@
 <?php
 
-namespace MigrationReview\Tests\Feature;
+namespace GodfreysDragon\MigrationReview\Tests\Feature;
 
+use GodfreysDragon\MigrationReview\Ai\AiReview;
+use GodfreysDragon\MigrationReview\Ai\AiReviewer;
+use GodfreysDragon\MigrationReview\Analysis\Finding;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Tests\Fakes\FakeAiReviewer;
+use GodfreysDragon\MigrationReview\Tests\TestCase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use MigrationReview\Ai\AiReview;
-use MigrationReview\Ai\AiReviewer;
-use MigrationReview\Analysis\Finding;
-use MigrationReview\Analysis\Severity;
-use MigrationReview\Tests\Fakes\FakeAiReviewer;
-use MigrationReview\Tests\TestCase;
 
 class ReviewCommandTest extends TestCase
 {
@@ -129,6 +129,28 @@ class ReviewCommandTest extends TestCase
         $this->runJson(['paths' => [self::fixturePath('2026_01_04_000000_backfill_order_totals.php')]]);
 
         $this->assertSame(['orders' => 1], $fake->inputs[0]->tableRows);
+    }
+
+    public function test_the_ai_never_sees_bound_values(): void
+    {
+        $dir = sys_get_temp_dir().'/migration-review-'.uniqid();
+        mkdir($dir);
+        file_put_contents($dir.'/2026_02_01_000000_store_setting.php', '<?php return new class extends Illuminate\Database\Migrations\Migration {'
+            ." public function up(): void { Illuminate\\Support\\Facades\\DB::table('settings')->insert(['value' => config('services.billing.secret'), 'note' => 'why?']); } };");
+        config(['services.billing.secret' => 'sk_live_do_not_send', 'migration-review.ai.api_key' => 'test-key']);
+        $fake = new FakeAiReviewer(new AiReview('', []));
+        $this->app->instance(AiReviewer::class, $fake);
+
+        try {
+            $migration = $this->runJson(['paths' => [$dir]])['migrations'][0];
+        } finally {
+            array_map('unlink', glob($dir.'/*') ?: []);
+            rmdir($dir);
+        }
+
+        // The local report shows the real value; the AI gets a placeholder.
+        $this->assertSame(['insert into "settings" ("value", "note") values (\'sk_live_do_not_send\', \'why?\')'], $migration['sql']);
+        $this->assertSame(['insert into "settings" ("value", "note") values (?, ?)'], $fake->inputs[0]->sql);
     }
 
     public function test_ai_findings_are_merged_when_a_reviewer_is_configured(): void

@@ -1,19 +1,20 @@
 <?php
 
-namespace MigrationReview\Commands;
+namespace GodfreysDragon\MigrationReview\Commands;
 
+use GodfreysDragon\MigrationReview\Analysis\MigrationReport;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\MigrationReviewer;
+use GodfreysDragon\MigrationReview\Output\ControlCharacters;
+use GodfreysDragon\MigrationReview\Output\GithubRenderer;
+use GodfreysDragon\MigrationReview\Output\JsonRenderer;
+use GodfreysDragon\MigrationReview\Output\MarkdownRenderer;
+use GodfreysDragon\MigrationReview\Output\Renderer;
+use GodfreysDragon\MigrationReview\Output\TextRenderer;
+use GodfreysDragon\MigrationReview\Support\MigrationFile;
+use GodfreysDragon\MigrationReview\Support\MigrationLocator;
 use Illuminate\Console\Command;
 use Illuminate\Database\DatabaseManager;
-use MigrationReview\Analysis\MigrationReport;
-use MigrationReview\Analysis\Severity;
-use MigrationReview\MigrationReviewer;
-use MigrationReview\Output\GithubRenderer;
-use MigrationReview\Output\JsonRenderer;
-use MigrationReview\Output\MarkdownRenderer;
-use MigrationReview\Output\Renderer;
-use MigrationReview\Output\TextRenderer;
-use MigrationReview\Support\MigrationFile;
-use MigrationReview\Support\MigrationLocator;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -68,7 +69,7 @@ class ReviewMigrationsCommand extends Command
             withTableStats: ! $this->option('no-stats') && config('migration-review.table_stats', true),
             withAi: $withAi,
             progress: $isText && $withAi && $reviewer->hasAi()
-                ? fn (MigrationFile $file) => $this->line("  <fg=gray>Reviewing {$file->name}…</>")
+                ? fn (MigrationFile $file) => $this->line('  <fg=gray>Reviewing '.OutputFormatter::escape(ControlCharacters::strip($file->name)).'…</>')
                 : null,
         );
 

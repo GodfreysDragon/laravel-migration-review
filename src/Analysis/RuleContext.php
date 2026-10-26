@@ -1,6 +1,6 @@
 <?php
 
-namespace MigrationReview\Analysis;
+namespace GodfreysDragon\MigrationReview\Analysis;
 
 /**
  * Facts about the target database that let rules judge how risky an operation really is.
