@@ -48,6 +48,11 @@ public function up(): void
 public function down(): void {}
 ```
 
+![Terminal output of php artisan migrate:review on the backfill migration: three high, four medium and two low findings, six of them from the AI review](docs/images/migrate-review-ai.png)
+
+<details>
+<summary>Same output as text</summary>
+
 ```text
 $ php artisan migrate:review        # excerpt: one of the three pending migrations
 
@@ -93,6 +98,8 @@ $ php artisan migrate:review        # excerpt: one of the three pending migratio
       note: SQL preview unavailable: Class "App\Models\Order" not found
 ```
 
+</details>
+
 The rules flag the shape of each risky operation. Claude catches what needs judgement: line 13 can never run, the raw `DELETE` is worse than a generic raw-SQL warning, and the line hidden by the ignore comment is still wrong. AI output varies between runs; reviews are cached, so re-running on an unchanged migration returns the same result.
 
 ## Why
@@ -119,6 +126,8 @@ The package is not on Packagist. Install it from GitHub by adding the repository
 ```bash
 composer require --dev godfreysdragon/laravel-migration-review:^0.1
 ```
+
+> **Windows:** if `composer` is a `.bat` wrapper (Laravel Herd, for example), cmd strips the `^`, so the constraint is saved as an exact `0.1`. Use the equivalent `~0.1.0` instead.
 
 Requires PHP 8.2+ and Laravel 12 or 13. The service provider is auto-discovered.
 
