@@ -1,14 +1,14 @@
 <?php
 
-namespace MigrationReview\Tests\Unit;
+namespace GodfreysDragon\MigrationReview\Tests\Unit;
 
-use MigrationReview\Analysis\Finding;
-use MigrationReview\Analysis\RuleContext;
-use MigrationReview\Analysis\Rules;
-use MigrationReview\Analysis\StaticAnalyzer;
-use MigrationReview\Support\MigrationFile;
-use MigrationReview\Support\MigrationParser;
-use MigrationReview\Tests\TestCase;
+use GodfreysDragon\MigrationReview\Analysis\Finding;
+use GodfreysDragon\MigrationReview\Analysis\RuleContext;
+use GodfreysDragon\MigrationReview\Analysis\Rules;
+use GodfreysDragon\MigrationReview\Analysis\StaticAnalyzer;
+use GodfreysDragon\MigrationReview\Support\MigrationFile;
+use GodfreysDragon\MigrationReview\Support\MigrationParser;
+use GodfreysDragon\MigrationReview\Tests\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace MigrationReview\Analysis;
+namespace GodfreysDragon\MigrationReview\Analysis;
 
-use MigrationReview\Support\MigrationFile;
+use GodfreysDragon\MigrationReview\Support\MigrationFile;
 
 /**
  * Everything the reviewer learned about one migration file.

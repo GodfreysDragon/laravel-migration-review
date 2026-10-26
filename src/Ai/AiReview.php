@@ -1,9 +1,9 @@
 <?php
 
-namespace MigrationReview\Ai;
+namespace GodfreysDragon\MigrationReview\Ai;
 
-use MigrationReview\Analysis\Finding;
-use MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Analysis\Finding;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
 
 final class AiReview
 {

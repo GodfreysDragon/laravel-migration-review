@@ -1,10 +1,10 @@
 <?php
 
-namespace MigrationReview\Output;
+namespace GodfreysDragon\MigrationReview\Output;
 
-use MigrationReview\Analysis\Finding;
-use MigrationReview\Analysis\MigrationReport;
-use MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Analysis\Finding;
+use GodfreysDragon\MigrationReview\Analysis\MigrationReport;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
 /**
@@ -110,6 +110,6 @@ class TextRenderer implements Renderer
 
     private function e(string $text): string
     {
-        return OutputFormatter::escape($text);
+        return OutputFormatter::escape(ControlCharacters::strip($text));
     }
 }

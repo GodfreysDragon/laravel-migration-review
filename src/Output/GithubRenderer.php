@@ -1,8 +1,8 @@
 <?php
 
-namespace MigrationReview\Output;
+namespace GodfreysDragon\MigrationReview\Output;
 
-use MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
 
 /**
  * GitHub Actions workflow commands, which show up as inline annotations on the pull request diff.
@@ -42,7 +42,7 @@ class GithubRenderer implements Renderer
 
     private function data(string $value): string
     {
-        return str_replace(['%', "\r", "\n"], ['%25', '%0D', '%0A'], $value);
+        return str_replace(['%', "\r", "\n"], ['%25', '%0D', '%0A'], ControlCharacters::strip($value));
     }
 
     private function property(string $value): string

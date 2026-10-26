@@ -1,6 +1,6 @@
 <?php
 
-use MigrationReview\Analysis\Rules;
+use GodfreysDragon\MigrationReview\Analysis\Rules;
 
 return [
 
@@ -70,7 +70,7 @@ return [
     | Rules
     |--------------------------------------------------------------------------
     |
-    | Add your own classes implementing MigrationReview\Analysis\Rules\Rule, or
+    | Add your own classes implementing GodfreysDragon\MigrationReview\Analysis\Rules\Rule, or
     | disable built-in ones by id. Single findings can be silenced in a migration
     | with a `// migration-review-ignore: <rule-id>` comment on or above the line.
     |

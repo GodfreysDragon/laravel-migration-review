@@ -1,10 +1,10 @@
 <?php
 
-namespace MigrationReview\Tests\Unit;
+namespace GodfreysDragon\MigrationReview\Tests\Unit;
 
-use MigrationReview\Support\MigrationParser;
-use MigrationReview\Support\Parsed\CodeCall;
-use MigrationReview\Tests\TestCase;
+use GodfreysDragon\MigrationReview\Support\MigrationParser;
+use GodfreysDragon\MigrationReview\Support\Parsed\CodeCall;
+use GodfreysDragon\MigrationReview\Tests\TestCase;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 
 class MigrationParserTest extends BaseTestCase

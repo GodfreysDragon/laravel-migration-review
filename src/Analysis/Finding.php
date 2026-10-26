@@ -1,6 +1,6 @@
 <?php
 
-namespace MigrationReview\Analysis;
+namespace GodfreysDragon\MigrationReview\Analysis;
 
 /**
  * A single problem found in a migration, either by a static rule or by the AI reviewer.

@@ -1,15 +1,15 @@
 <?php
 
-namespace MigrationReview\Tests\Unit;
+namespace GodfreysDragon\MigrationReview\Tests\Unit;
 
-use MigrationReview\Analysis\Finding;
-use MigrationReview\Analysis\MigrationReport;
-use MigrationReview\Analysis\Severity;
-use MigrationReview\Output\GithubRenderer;
-use MigrationReview\Output\JsonRenderer;
-use MigrationReview\Output\MarkdownRenderer;
-use MigrationReview\Output\TextRenderer;
-use MigrationReview\Tests\TestCase;
+use GodfreysDragon\MigrationReview\Analysis\Finding;
+use GodfreysDragon\MigrationReview\Analysis\MigrationReport;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Output\GithubRenderer;
+use GodfreysDragon\MigrationReview\Output\JsonRenderer;
+use GodfreysDragon\MigrationReview\Output\MarkdownRenderer;
+use GodfreysDragon\MigrationReview\Output\TextRenderer;
+use GodfreysDragon\MigrationReview\Tests\TestCase;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 
@@ -70,6 +70,38 @@ class RendererTest extends BaseTestCase
         $this->assertStringContainsString('AI: Dangerous.', $text);
         $this->assertStringContainsString('note: SQL preview unavailable: boom', $text);
         $this->assertStringContainsString('Reviewed 1 migration: 1 high, 1 medium, 1 low.', $text);
+    }
+
+    public function test_markdown_neutralises_links_html_and_mentions_from_untrusted_text(): void
+    {
+        $report = new MigrationReport(TestCase::migration("Schema::drop('users');"), [
+            new Finding('ai', Severity::High, 'Click [here](https://evil.example) @octocat', 'See ![x](https://evil.example/p.png) <img src=x> *bold*', 3, 'Keep `a|b` and `@team`', null, Finding::SOURCE_AI),
+        ], aiSummary: "Ping @org/team\nand [link](https://evil.example)", notes: ["Failed: <b>x</b> _y_ \x1b[31mred"]);
+
+        $markdown = (new MarkdownRenderer)->render([$report]);
+
+        $this->assertStringContainsString("Click \\[here\\](https://evil.example) @\u{200B}octocat", $markdown);
+        $this->assertStringContainsString('See \!\[x\](https://evil.example/p.png) &lt;img src=x&gt; \*bold\*', $markdown);
+        $this->assertStringContainsString('Keep `a\|b` and `@team`', $markdown);
+        $this->assertStringContainsString("> Ping @\u{200B}org/team and \\[link\\](https://evil.example)", $markdown);
+        $this->assertStringContainsString('_Note: Failed: &lt;b&gt;x&lt;/b&gt; \_y\_ \[31mred_', $markdown);
+        $this->assertStringNotContainsString("\x1b", $markdown);
+    }
+
+    public function test_control_characters_never_reach_the_terminal_or_annotations(): void
+    {
+        $reports = [new MigrationReport(TestCase::migration("Schema::drop('users');"), [
+            new Finding('ai', Severity::High, "Title \x1b]8;;https://evil.example\x07link", "Body \x1b[2J\u{9B}\xFF cleared", 3, null, null, Finding::SOURCE_AI),
+        ])];
+
+        $text = (new TextRenderer)->render($reports);
+        $github = (new GithubRenderer)->render($reports);
+
+        $this->assertStringNotContainsString("\x1b", $text);
+        $this->assertStringNotContainsString("\x07", $text);
+        $this->assertStringNotContainsString("\x1b", $github);
+        $this->assertStringContainsString('Body [2J? cleared', $github);
+        $this->assertTrue(mb_check_encoding($text.$github, 'UTF-8'));
     }
 
     public function test_markdown_keeps_notes_when_there_are_no_findings(): void

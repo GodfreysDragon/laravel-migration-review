@@ -1,8 +1,8 @@
 <?php
 
-namespace MigrationReview\Output;
+namespace GodfreysDragon\MigrationReview\Output;
 
-use MigrationReview\Analysis\MigrationReport;
+use GodfreysDragon\MigrationReview\Analysis\MigrationReport;
 
 class JsonRenderer implements Renderer
 {

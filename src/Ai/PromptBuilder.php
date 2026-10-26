@@ -1,8 +1,8 @@
 <?php
 
-namespace MigrationReview\Ai;
+namespace GodfreysDragon\MigrationReview\Ai;
 
-use MigrationReview\Analysis\Finding;
+use GodfreysDragon\MigrationReview\Analysis\Finding;
 
 /**
  * Builds the system prompt, user message and output schema for an AI migration review.
@@ -12,7 +12,9 @@ class PromptBuilder
     /**
      * Bump when the prompt changes so cached reviews are not reused.
      */
-    public const VERSION = '2';
+    public const VERSION = '3';
+
+    private const TAGS = 'database_driver|table_row_counts|migration|sql_preview|static_findings';
 
     public function system(): string
     {
@@ -41,6 +43,10 @@ PROMPT;
         $source = $this->numbered($input->migration->contents);
         $sql = $input->sql === [] ? '(SQL preview not available)' : implode(";\n", $input->sql).';';
 
+        if ($input->sql !== [] && str_contains($sql, '?')) {
+            $sql = "(Bound values are shown as ?; the migration source has the expressions that produce them.)\n".$sql;
+        }
+
         if ($input->sql !== [] && $input->sqlApproximate) {
             $sql = '(Approximate: up() read from the database while this preview was generated in pretend mode, and those reads returned nothing. '
                 .'Statements built from them, such as a SQLite table rebuild for ->change(), may have empty or missing column lists that will not appear in the real run. '
@@ -57,14 +63,24 @@ PROMPT;
             $input->staticFindings,
         );
 
+        $path = htmlspecialchars($input->migration->relativePath(), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
         return implode("\n\n", [
-            "<database_driver>{$input->driver}</database_driver>",
-            '<table_row_counts>'."\n".($rows === [] ? '(unknown)' : implode("\n", $rows))."\n".'</table_row_counts>',
-            "<migration path=\"{$input->migration->relativePath()}\">\n{$source}\n</migration>",
-            "<sql_preview>\n{$sql}\n</sql_preview>",
-            "<static_findings>\n".($findings === [] ? '(none)' : implode("\n", $findings))."\n</static_findings>",
+            '<database_driver>'.$this->data($input->driver).'</database_driver>',
+            '<table_row_counts>'."\n".$this->data($rows === [] ? '(unknown)' : implode("\n", $rows))."\n".'</table_row_counts>',
+            "<migration path=\"{$path}\">\n".$this->data($source)."\n</migration>",
+            "<sql_preview>\n".$this->data($sql)."\n</sql_preview>",
+            "<static_findings>\n".$this->data($findings === [] ? '(none)' : implode("\n", $findings))."\n</static_findings>",
             'Review this migration.',
         ]);
+    }
+
+    /**
+     * Stops data from closing one of the prompt's sections early, e.g. a migration containing "</migration>".
+     */
+    private function data(string $text): string
+    {
+        return (string) preg_replace('#</(?=\s*(?:'.self::TAGS.')\b)#i', '<\/', $text);
     }
 
     /**

@@ -1,11 +1,11 @@
 <?php
 
-namespace MigrationReview\Analysis\Rules;
+namespace GodfreysDragon\MigrationReview\Analysis\Rules;
 
-use MigrationReview\Analysis\RuleContext;
-use MigrationReview\Analysis\Severity;
-use MigrationReview\Support\Parsed\CodeCall;
-use MigrationReview\Support\Parsed\ParsedMigration;
+use GodfreysDragon\MigrationReview\Analysis\RuleContext;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Support\Parsed\CodeCall;
+use GodfreysDragon\MigrationReview\Support\Parsed\ParsedMigration;
 
 /**
  * DB::statement() and friends: invisible to the schema-builder rules, so they need a human look.

@@ -1,11 +1,11 @@
 <?php
 
-namespace MigrationReview\Support;
+namespace GodfreysDragon\MigrationReview\Support;
 
-use MigrationReview\Support\Parsed\BlueprintCall;
-use MigrationReview\Support\Parsed\CodeCall;
-use MigrationReview\Support\Parsed\ParsedMigration;
-use MigrationReview\Support\Parsed\SchemaOperation;
+use GodfreysDragon\MigrationReview\Support\Parsed\BlueprintCall;
+use GodfreysDragon\MigrationReview\Support\Parsed\CodeCall;
+use GodfreysDragon\MigrationReview\Support\Parsed\ParsedMigration;
+use GodfreysDragon\MigrationReview\Support\Parsed\SchemaOperation;
 use PhpParser\Error;
 use PhpParser\Node;
 use PhpParser\Node\Expr;

@@ -1,10 +1,12 @@
 <?php
 
-namespace MigrationReview\Support;
+namespace GodfreysDragon\MigrationReview\Support;
 
+use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Str;
 use RuntimeException;
+use WeakMap;
 
 /**
  * Produces the SQL a migration's up() would run, using the connection's "pretend" mode.
@@ -19,36 +21,74 @@ class SqlPreviewer
 {
     private const READ_STATEMENT = '/^\s*(select|pragma|show|describe)\b/i';
 
+    /** @var WeakMap<Connection, true> Connections that already have the capture hook. */
+    private WeakMap $hooked;
+
+    private ?Connection $capturing = null;
+
+    /** @var list<array{query: string, bindings: array<int|string, mixed>}> */
+    private array $captured = [];
+
     public function __construct(
         private readonly DatabaseManager $db,
-    ) {}
+    ) {
+        $this->hooked = new WeakMap;
+    }
 
     public function preview(MigrationFile $file): SqlPreview
     {
         $migration = $this->resolve($file);
         $connection = $this->db->connection(method_exists($migration, 'getConnection') ? $migration->getConnection() : null);
 
+        // The pretend log has bindings already substituted, so capture each query before that happens.
+        if (! isset($this->hooked[$connection])) {
+            $connection->beforeExecuting(function (string $query, array $bindings, Connection $on) {
+                if ($on === $this->capturing) {
+                    $this->captured[] = ['query' => $query, 'bindings' => $bindings];
+                }
+            });
+            $this->hooked[$connection] = true;
+        }
+
         $previous = $this->db->getDefaultConnection();
+        $this->drain();
 
         try {
             $this->db->setDefaultConnection($connection->getName() ?? $previous);
+            $this->capturing = $connection;
 
-            $queries = $connection->pretend(function () use ($migration) {
+            $connection->pretend(function () use ($migration) {
                 if (method_exists($migration, 'up')) {
                     $migration->up();
                 }
             });
         } finally {
+            $this->capturing = null;
             $this->db->setDefaultConnection($previous);
         }
 
+        $queries = $this->drain();
+
         // Drop read-only statements: they are schema introspection (e.g. for ->change()) or lookups, not changes.
-        $writes = array_filter($queries, fn (array $query) => preg_match(self::READ_STATEMENT, $query['query']) !== 1);
+        $writes = array_values(array_filter($queries, fn (array $query) => preg_match(self::READ_STATEMENT, $query['query']) !== 1));
+        $grammar = $connection->getQueryGrammar();
 
         return new SqlPreview(
-            array_values(array_map(fn (array $query) => $this->inline($query['query'], $query['bindings']), $writes)),
+            array_map(fn (array $query) => $grammar->substituteBindingsIntoRawSql($query['query'], $connection->prepareBindings($query['bindings'])), $writes),
             readsDatabase: count($writes) < count($queries),
+            parameterized: array_map(fn (array $query) => $query['query'], $writes),
         );
+    }
+
+    /**
+     * @return list<array{query: string, bindings: array<int|string, mixed>}>
+     */
+    private function drain(): array
+    {
+        $captured = $this->captured;
+        $this->captured = [];
+
+        return $captured;
     }
 
     private function resolve(MigrationFile $file): object
@@ -72,18 +112,5 @@ class SqlPreviewer
         }
 
         return new $class;
-    }
-
-    /**
-     * @param  array<int|string, mixed>  $bindings
-     */
-    private function inline(string $sql, array $bindings): string
-    {
-        foreach ($bindings as $binding) {
-            $value = is_string($binding) ? "'".str_replace("'", "''", $binding)."'" : var_export($binding, true);
-            $sql = preg_replace('/\?/', str_replace(['\\', '$'], ['\\\\', '\\$'], $value), $sql, 1) ?? $sql;
-        }
-
-        return $sql;
     }
 }

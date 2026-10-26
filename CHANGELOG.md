@@ -4,12 +4,23 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-26
+
+### Changed
+- **Breaking:** the root namespace is now `GodfreysDragon\MigrationReview` (was `MigrationReview`). If you published the config, change `use MigrationReview\Analysis\Rules;` at the top of `config/migration-review.php` to `use GodfreysDragon\MigrationReview\Analysis\Rules;`. Custom rules need the same change in their `use` statements.
+- The AI review gets the SQL preview with bound values left as `?`. Values computed at runtime, such as `config('services.x.secret')` inserted by a migration, previously went to the API. The local report still shows them. Cached AI reviews are refreshed once because the prompt changed.
+- `ext-mbstring` is now an explicit requirement. Laravel already needs it.
+
 ### Added
 - `MIGRATION_REVIEW_SQL_PREVIEW` environment variable to turn the SQL preview off.
 - A Security section in the README and a `SECURITY.md` with private vulnerability reporting.
 
 ### Fixed
 - The docs no longer claim migrations are never executed. The SQL preview calls `up()` in pretend mode, which captures queries on the migration's connection but runs any other code in `up()`; the README now says so and explains when to use `--no-sql`.
+- Markdown reports escape text from migrations, errors and the AI, so a PR comment can't gain links, images, HTML or `@mentions` from them.
+- Control characters, including terminal escape sequences, and invalid UTF-8 are removed from text, Markdown and GitHub output.
+- Migration source can no longer close a section of the AI prompt early (for example with `</migration>`), and the file path is escaped in the prompt.
+- The SQL preview showed a wrong statement when a bound value contained `?`. Values are now substituted by Laravel's own grammar.
 
 ## [0.1.1] - 2026-10-25
 

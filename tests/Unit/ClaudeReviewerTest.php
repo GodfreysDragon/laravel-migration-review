@@ -1,15 +1,15 @@
 <?php
 
-namespace MigrationReview\Tests\Unit;
+namespace GodfreysDragon\MigrationReview\Tests\Unit;
 
 use Anthropic\Client;
+use GodfreysDragon\MigrationReview\Ai\AiReviewFailed;
+use GodfreysDragon\MigrationReview\Ai\ClaudeReviewer;
+use GodfreysDragon\MigrationReview\Ai\PromptBuilder;
+use GodfreysDragon\MigrationReview\Ai\ReviewInput;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Tests\TestCase;
 use GuzzleHttp\Psr7\Response;
-use MigrationReview\Ai\AiReviewFailed;
-use MigrationReview\Ai\ClaudeReviewer;
-use MigrationReview\Ai\PromptBuilder;
-use MigrationReview\Ai\ReviewInput;
-use MigrationReview\Analysis\Severity;
-use MigrationReview\Tests\TestCase;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;

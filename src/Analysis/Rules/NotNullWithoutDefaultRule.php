@@ -1,11 +1,11 @@
 <?php
 
-namespace MigrationReview\Analysis\Rules;
+namespace GodfreysDragon\MigrationReview\Analysis\Rules;
 
-use MigrationReview\Analysis\RuleContext;
-use MigrationReview\Analysis\Severity;
-use MigrationReview\Support\Parsed\BlueprintCall;
-use MigrationReview\Support\Parsed\ParsedMigration;
+use GodfreysDragon\MigrationReview\Analysis\RuleContext;
+use GodfreysDragon\MigrationReview\Analysis\Severity;
+use GodfreysDragon\MigrationReview\Support\Parsed\BlueprintCall;
+use GodfreysDragon\MigrationReview\Support\Parsed\ParsedMigration;
 
 /**
  * Adding a NOT NULL column with no default to a table that already has rows.

@@ -1,6 +1,6 @@
 <?php
 
-namespace MigrationReview\Support\Parsed;
+namespace GodfreysDragon\MigrationReview\Support\Parsed;
 
 /**
  * A non-Schema call inside up() that a rule may care about: raw SQL, query builder writes, model usage.

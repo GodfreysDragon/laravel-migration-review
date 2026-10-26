@@ -1,21 +1,21 @@
 <?php
 
-namespace MigrationReview;
+namespace GodfreysDragon\MigrationReview;
 
 use Anthropic\Client;
+use GodfreysDragon\MigrationReview\Ai\AiReviewer;
+use GodfreysDragon\MigrationReview\Ai\CachingReviewer;
+use GodfreysDragon\MigrationReview\Ai\ClaudeReviewer;
+use GodfreysDragon\MigrationReview\Ai\PromptBuilder;
+use GodfreysDragon\MigrationReview\Analysis\Rules\Rule;
+use GodfreysDragon\MigrationReview\Analysis\StaticAnalyzer;
+use GodfreysDragon\MigrationReview\Commands\ReviewMigrationsCommand;
+use GodfreysDragon\MigrationReview\Support\MigrationLocator;
+use GodfreysDragon\MigrationReview\Support\MigrationParser;
+use GodfreysDragon\MigrationReview\Support\SqlPreviewer;
+use GodfreysDragon\MigrationReview\Support\TableStats;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
-use MigrationReview\Ai\AiReviewer;
-use MigrationReview\Ai\CachingReviewer;
-use MigrationReview\Ai\ClaudeReviewer;
-use MigrationReview\Ai\PromptBuilder;
-use MigrationReview\Analysis\Rules\Rule;
-use MigrationReview\Analysis\StaticAnalyzer;
-use MigrationReview\Commands\ReviewMigrationsCommand;
-use MigrationReview\Support\MigrationLocator;
-use MigrationReview\Support\MigrationParser;
-use MigrationReview\Support\SqlPreviewer;
-use MigrationReview\Support\TableStats;
 
 class MigrationReviewServiceProvider extends ServiceProvider
 {
